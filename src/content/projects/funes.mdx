@@ -1,0 +1,53 @@
+---
+title: Funes
+summary: local-first memory for your terminal
+year: June 2026 - August 2026
+tags: [rust, ollama, semantic-search]
+links:
+  - { label: GitHub, href: "https://github.com/funes-ai/funes" }
+  - { label: Site, href: "https://get-funes.vercel.app" }
+---
+
+Funes is a local AI memory daemon for the terminal. It indexes your files, notes, and shell history into a local vector database, and you search all of it in plain English: "that postgres deadlock fix", "the nginx config that fixed the 502s". There is no cloud, no account, and nothing leaves your machine.
+
+It's named after Ireneo Funes, the character in Borges' *Funes the Memorious* who forgets nothing. The goal is a more modest version of that: not perfect recall, just enough to find the thing you half remember fixing three months ago.
+
+## The problem
+
+The annoying part of forgetting something you've solved isn't the solution, it's the search. You remember it involved deadlocks, but not which project, which file, or which week. Grep needs the exact words and shell history only goes back so far. Funes searches by meaning instead, so a vague description can still land on the right chunk.
+
+## How it works
+
+```text
+files → chunker → embedder (nomic-embed-text) → SQLite → cosine similarity → results
+```
+
+A watcher picks up file changes through OS-level filesystem events. Each file is chunked by content type: code by function block, markdown by heading, and shell history one command per line. Every chunk is embedded locally with `nomic-embed-text` through Ollama and stored as a vector in SQLite. At query time the question is embedded the same way and compared against the stored vectors by cosine similarity. Adding `--llm` hands the top results to a local `llama3` for a plain-English answer, and `--json` gives machine-readable output.
+
+Shell history works for bash, zsh, fish, and PowerShell.
+
+## Design decisions
+
+- **Local-first, no exceptions.** Both the embedder and the synthesis model run through Ollama, so nothing is sent to an external server. For something that indexes your notes, `.env`-adjacent files, and shell history, that's the whole trust model.
+- **Chunk by structure, not by size.** Splitting code at function boundaries and markdown at headings keeps each chunk about one thing, which matters more for retrieval quality than the choice of embedding model.
+- **SQLite for vectors.** One file, no separate service to run, and the dependency footprint stays small. It's the right fit for a tool that has to install with a single command.
+- **Privacy controls are first-class.** `funes forget <pattern>` excludes matching files, and the default config already skips `*.env`, `*.secret`, `node_modules`, `.git`, and `target`.
+- **Distribution is part of the product.** It ships as `cargo install funes-memory`, a Homebrew tap, a shell and PowerShell installer, and prebuilt binaries for macOS, Windows, and Linux built with `cargo-dist`.
+
+## Tradeoffs
+
+- **Queries are a linear scan.** Cosine similarity runs against every stored vector. That's fast at personal scale (the README reports about 85ms average over 3,400+ documents), but query time grows with the index and there's no approximate-nearest-neighbor structure behind it yet.
+- **It depends on Ollama.** Funes needs the daemon running plus two pulled models, which is a real setup cost for a "quiet background tool".
+- **Embeddings are only as good as the chunks.** Chunking by content type helps for code and markdown, but arbitrary text files still get split more crudely.
+
+## What I'd change
+
+- **True background daemon mode.** `funes start` runs the file watcher, but a proper detached daemon that starts with the machine is still on the roadmap.
+- **Batch embedding.** Indexing embeds chunk by chunk, and batching would speed up the first big index considerably.
+- **An index for the vectors,** once linear scan stops being fast enough.
+- **Plugins for other sources:** browser history, Notion, and Obsidian.
+- **Code signing for the Windows binaries,** which currently trigger an unknown-publisher warning.
+
+## Stack
+
+Rust, with `tokio` for async, `clap` for the CLI, `reqwest` for talking to Ollama, `rusqlite` for storage, and `notify` for filesystem events. Config lives in `~/.funes/config.toml`. The docs site is a separate Next.js project.

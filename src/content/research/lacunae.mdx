@@ -1,0 +1,63 @@
+---
+title: Lacunae
+summary: Comparing k-space sampling patterns for accelerated MRI reconstruction across acceleration factors
+year: June 2026 - August 2026
+tags: [deep-learning, mri, pytorch]
+links:
+  - { label: GitHub, href: "https://github.com/bhavv04/lacunae" }
+---
+
+## Abstract
+
+An MRI scanner doesn't capture an image directly. It measures the image's Fourier transform, called k-space, one line at a time, and scan time scales with how many lines you collect. Accelerating an MRI means skipping most of them and reconstructing the image from what's left, so the choice of which lines to keep is a first-order design decision.
+
+Lacunae is an empirical study of that choice. It trains the same U-Net on fastMRI single-coil knee data under four sampling patterns (random Cartesian, equispaced, radial, and variable-density) at 4x, 8x, and 16x acceleration, and compares reconstruction quality with SSIM and PSNR. A lacuna is a gap, which is what undersampling leaves in k-space.
+
+It's a work in progress. The baseline is trained and the rest of the experimental grid is being built out.
+
+## Motivation
+
+Most accelerated MRI reconstruction papers default to random Cartesian undersampling without much justification. The sampling pattern is treated as a fixed preprocessing choice instead of a variable, so there's little clean evidence on how much it actually matters for a learned reconstruction. This study treats it as the variable and holds everything else constant.
+
+## Study design
+
+- **Sampling patterns:** random Cartesian, equispaced, radial, variable-density.
+- **Acceleration factors:** 4x, 8x, 16x.
+- **Model:** one U-Net architecture, fixed across every run.
+- **Metrics:** SSIM and PSNR, reported as means on a held-out split.
+- **Data:** fastMRI single-coil knee.
+
+That's twelve training runs. Because the model never changes, any difference in reconstruction quality is attributable to the mask.
+
+## Sampling patterns
+
+- **Random Cartesian:** the de facto standard and the baseline. It samples k-space columns at random while always keeping the low-frequency center.
+- **Equispaced:** every Nth column. It's deterministic and easy for hardware, but it produces coherent aliasing artifacts.
+- **Radial:** columns are sampled with probability weighted by distance from the center, as a Cartesian stand-in for radial acquisition. It's densest at low frequencies, where most of the image energy sits.
+- **Variable-density:** a quadratic falloff from the center, a smooth transition from dense low-frequency sampling to sparse high-frequency sampling.
+
+## Model
+
+A standard U-Net with four encoder and decoder stages, about 7.7M parameters. The encoder widens from 32 to 256 channels, a 512-channel bottleneck follows, and the decoder mirrors the encoder with transposed convolutions and skip connections. It's trained with a combined L1 and SSIM loss.
+
+## Where it stands
+
+- **Done:** the random Cartesian baseline, trained and evaluated at 4x and 8x. Qualitatively, the horizontal aliasing streaks in the naive undersampled reconstruction are suppressed by the model.
+- **Still to do:** the equispaced, radial, and variable-density masks, the full four-by-three grid, and the results table and analysis.
+
+There are no headline numbers yet, because a comparison needs more than one pattern. The questions the study is built to answer are which pattern wins at each acceleration factor, whether the ranking changes as acceleration rises, and how large the gap between patterns is relative to the gap between acceleration factors.
+
+## Scope and limitations
+
+- Single-coil data only. Multi-coil acquisition changes how much information each sample carries.
+- Knee anatomy only, so the findings may not transfer to other body parts without rerunning the comparison.
+- One architecture. The study measures how much the pattern matters for this model, not how patterns interact with other networks, and it can't say how pattern effects compare to architecture effects without a second axis.
+- The masks are column-based on a Cartesian grid, so "radial" is an approximation of radial acquisition and not a true radial trajectory.
+
+## Paper
+
+This is being written up as a paper, and a link will go here once it's public.
+
+## Stack
+
+PyTorch, the fastMRI single-coil knee dataset, and a U-Net reconstruction model.

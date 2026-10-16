@@ -1,0 +1,61 @@
+---
+title: Thunderhead
+summary: passive bot-detection reverse proxy
+year: May 2026 - Present
+tags: [go, security, reverse-proxy]
+links:
+  - { label: GitHub, href: "https://github.com/trialogue/thunderhead" }
+  - { label: Site, href: "https://thunderhead.network" }
+---
+
+Thunderhead is a self-hosted reverse proxy written in Go. It sits in front of an app, scores every request from 0 to 100 on how bot-like its behavior is, and responds in proportion: let it through, slow it down, or block it with a `403`. There is no CAPTCHA, no browser challenge, and no client-side JavaScript.
+
+It was inspired by Anubis, but takes the opposite approach. Anubis makes clients prove they're human with proof-of-work. Thunderhead just watches how they behave.
+
+## Why passive
+
+Challenge-based defenses assume a browser. They fall over on API clients, headless traffic, and anything that can't run a script, and they add friction for the real users who do pass. Scoring inline avoids both problems: a legitimate request is proxied with no added delay, and nothing has to be installed or solved on the client.
+
+## How it scores
+
+Each client is scored on five signals, summed and capped at 100:
+
+- **robots.txt violation (+30):** requesting a path your `robots.txt` disallows. Disallowed paths are fetched from the upstream automatically.
+- **Sequential path crawling (+25):** walking paths in an ordered, systematic pattern.
+- **High request rate (up to +20):** more than 30 requests in a 60 second window, scaled by how far over it goes.
+- **Suspicious or missing headers (up to +15):** bot-typical headers, or missing ones like `Accept-Language`.
+- **Text-heavy page pattern (+10):** hitting content pages while skipping assets.
+
+The default thresholds are 40 to tarpit and 75 to block. A tarpit holds the response for a configurable delay (5 seconds by default) and then proxies it, which wastes a scraper's time without hard-failing a borderline human.
+
+## Design decisions
+
+- **Graduated responses.** Heuristics produce false positives, so the middle band delays instead of blocking. Only high-confidence traffic gets a `403`.
+- **Explainable by default.** Every decision is logged as structured JSON with the IP, method, path, score, action, and user agent, so any block traces back to its cause. That matters more than raw accuracy when you're tuning thresholds on a live site.
+- **Dry-run mode.** You can score and log real traffic without ever tarpitting or blocking, which is how you find out whether your thresholds are sane before enforcing them.
+- **Runtime-editable lists.** Allowlist and blocklist entries (IP, CIDR, user agent) change live through an authenticated REST API, while the rest of the config is read at startup.
+- **Embeddable.** The scoring engine is exposed as `net/http` middleware in `pkg/middleware`, so a Go service can use it without running the standalone proxy.
+- **Small footprint.** A static binary with no CGO, shipped as a multi-stage Docker image running as a non-root user.
+
+There are three ways to watch it: a Bubble Tea terminal dashboard, a web status page served by the proxy itself, and a standalone Next.js dashboard that talks to the REST API.
+
+## Tradeoffs and limitations
+
+These are real, and I'd rather state them than hide them:
+
+- **Scoring is per-IP.** A distributed scraper that spreads requests across many addresses scores lower than one noisy client.
+- **The signals are heuristic.** A patient bot that respects `robots.txt`, sends browser-like headers, and stays under the rate window won't be caught by these five signals alone.
+- **TLS termination only exists in the TUI binary** for now. The headless proxy serves plain HTTP, so it needs Caddy or nginx in front of it.
+- **Client identity trusts `X-Forwarded-For`.** That's right behind a load balancer you control, but spoofable if Thunderhead is directly internet-facing, so the header has to be stripped or overwritten at the edge.
+
+## What I'd change
+
+- TLS support in the headless binary
+- Config hot reload, so changing thresholds doesn't need a restart
+- Rate limiting by CIDR or subnet, which would help with the per-IP weakness above
+- A JavaScript-challenge fallback for borderline scores, as a last resort instead of a first line of defense
+- GoReleaser binary releases and a systemd unit
+
+## Stack
+
+Go for the proxy, analyzer, and REST API, with a 23-test suite on the analyzer package run under the race detector. CI runs `go mod verify`, `go vet`, and `go test -race` on every push, with a separate workflow that builds the Docker image. The dashboard and landing page are Next.js.

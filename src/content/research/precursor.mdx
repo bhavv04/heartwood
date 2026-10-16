@@ -1,0 +1,51 @@
+---
+title: Precursor
+summary: Cross-asset momentum spillover, a quantitative finance paper.
+year: May 2026 - July 2026
+tags: [quant, finance]
+links:
+  - { label: Paper, href: "https://ssrn.com/abstract=7151398" }
+  - { label: GitHub, href: "https://github.com/bhavv04/precursor" }
+---
+
+## Abstract
+
+Commodities are upstream inputs to the businesses that consume them. If oil starts trending, energy company revenues should follow, but with a lag. Precursor tests whether that intuition shows up in prices: does momentum in commodity futures contain statistically significant information about subsequent momentum in related sector equity ETFs?
+
+Using daily data from January 2010 to May 2026 across five commodity-equity pairs, the paper applies Granger causality tests, Vector Autoregression (VAR), and Directed Acyclic Graph (DAG) analysis to characterise the cross-asset causal structure. All five hypothesised spillover relationships are confirmed at the 5% level. The relationships are also regime-dependent: they cluster around macro shocks, and a simple trading signal built on them works in one regime and fades in the next. The conclusion is that commodity-to-equity momentum spillover is real but time-varying, activated by structural shocks and not operating as a continuous arbitrage.
+
+## Research question
+
+Does past momentum in commodity markets contain information about future momentum in related equity sectors, beyond what equity prices already reflect? Concretely, does WTI crude momentum today predict XLE (energy ETF) momentum a few trading days later, for some lag from one to five days?
+
+## Method
+
+- **Momentum signals:** for each asset, the rolling log return over a lookback window of 5, 10, or 20 trading days.
+- **Granger causality:** for each commodity-equity pair, compare a model of the equity's momentum on its own history against one that adds lagged commodity momentum, and test whether the added terms are jointly significant with an F-test. This runs across lag orders one through five.
+- **VAR and variance decomposition:** a VAR models commodity and equity momentum jointly, with the lag order chosen by AIC. Forecast Error Variance Decomposition then measures how much of each equity's momentum variance is explained by commodity shocks.
+- **DAG:** significant Granger relationships at the 5% level become directed edges, weighted by F-statistic. In-degree and out-degree centrality show which sectors receive the most signal and which commodities lead, and path length picks up indirect chains like oil to copper to materials.
+- **Regime analysis:** rolling Granger tests and Chow structural break tests check whether the relationships persist or shift over time.
+- **Backtest:** a long/short strategy takes the sign of commodity momentum at the lag where causality is strongest as its position in the equity ETF, scored on annualised Sharpe ratio, maximum drawdown, and hit rate, with an 80/20 train/test split.
+
+The asset universe is five commodity futures (WTI, Brent, copper, natural gas, gold) against three sector ETFs: XLE for energy, XLB for materials, and GDX for gold miners.
+
+## Results
+
+- **Every hypothesised spillover is confirmed at 5%.** Gold to GDX is the strongest (F = 18.90, p below 0.001). Natural gas to XLE is the weakest, barely clearing the threshold (F = 2.43, p = 0.046).
+- **Commodity shocks carry real weight at short horizons.** They explain 46.4% of GDX momentum variance and 31 to 37% of XLE momentum variance.
+- **The relationships are regime-dependent, not persistent.** Structural breaks appear at the 2022 energy crisis in nearly every pair. COVID-era breaks affect the energy and materials pairs but not gold to GDX.
+- **The signal tracks the regime.** The long/short strategy earns positive Sharpe ratios during the 2020 to 2022 COVID volatility regime and deteriorates after the energy crisis.
+
+## Takeaway
+
+The interesting finding isn't that commodity momentum leads equity momentum, but that it doesn't do so all the time. The spillover switches on around macro-structural shocks and then decays, which is why a static signal built on it works in one period and not the next. That makes it a conditional phenomenon, not a free-running arbitrage.
+
+## Caveats
+
+- Natural gas to XLE only just clears 5%, so it's the weakest of the five claims.
+- The backtest is a simple signal-based strategy meant to test whether the causal structure is exploitable, not a production trading system.
+- Granger causality is predictive precedence, not mechanism. It shows that commodity momentum helps forecast equity momentum, not why.
+
+## Stack
+
+Python, with `yfinance` for data, `pandas` and `numpy` for wrangling, `statsmodels` for the VAR, Granger tests, and OLS, `networkx` for the DAG, and `matplotlib`, `seaborn`, and `plotly` for figures. The analysis is organised as a sequence of notebooks, from data collection through to the paper itself.

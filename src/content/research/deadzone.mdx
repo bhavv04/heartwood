@@ -1,0 +1,44 @@
+---
+title: Deadzones
+summary: Modeling how Midwest farm runoff drives the Gulf of Mexico's hypoxic dead zone.
+year: July 2026
+tags: [environment, machine-learning, python]
+links:
+  - { label: Paper, href: "https://ssrn.com/abstract=7186418" }
+  - { label: GitHub, href: "https://github.com/bhavv04/deadzone" }
+---
+
+## Abstract
+
+Every summer, the water near the bottom of the northern Gulf of Mexico runs out of oxygen. The cause starts a thousand miles upstream: nitrogen fertilizer applied to Midwest cornfields drains into the Mississippi, travels south, and feeds algal blooms in the Gulf. When the algae die and decompose, they consume the available oxygen and suffocate everything on the seafloor.
+
+Deadzone models that chain from farm to river to ocean. It builds a 40-year record of the zone's size (1985 to 2024), engineers features from river nutrient loading and sea surface temperature, and trains a regression model to predict each year's size. It also looks at the years the model gets wrong, since those turn out to be the ones where something other than fertilizer was in charge.
+
+## What a dead zone is
+
+A hypoxic zone forms when dissolved oxygen drops below 2 mg/L, too low to support fish, shrimp, or bottom-dwelling life. The Gulf's forms every summer near the Mississippi delta, fed by agricultural runoff from a watershed covering about 40% of the continental US. NOAA and LUMCON scientists have measured its size every July since 1985. The record is 22,720 km² in 2017, larger than New Jersey.
+
+## Method
+
+- **Target:** annual dead zone area in km², from the LUMCON and NOAA NCCOS survey record, 1985 to 2024.
+- **Features:** spring nitrogen load in the Mississippi from USGS, and sea surface temperature from NOAA OISST. The NOAA World Ocean Atlas 2023 dissolved oxygen fields were used to explore the oceanographic side.
+- **Model:** a Random Forest regressor, evaluated with leave-one-out cross-validation. With only 40 annual observations, holding out one year at a time uses the data most efficiently.
+- **Anomaly analysis:** the model is used to flag years whose observed size departs from what nutrient load and temperature would predict, then each is examined for a cause.
+- **Visualization:** an animated chart of the zone's size pulsing across four decades.
+
+## Results
+
+- **Nitrogen dominates.** Spring nitrogen load is the strongest predictor of the zone's size (r = 0.788), while sea surface temperature is much weaker (r = 0.196). In the Random Forest, nitrogen accounts for 80.4% of feature importance and temperature for 19.6%.
+- **The model has real but moderate skill.** Leave-one-out R² is 0.52 and mean absolute error is 2,517 km². Nutrient load explains about half of the year-to-year variation, which leaves a lot for other factors.
+- **The misses are informative.** 2017, the record year, followed extreme spring flooding. 2020 saw Hurricane Hanna hit days before the survey cruise, disturbing the zone before it was measured. Storms and floods can reshape the zone independent of how much nitrogen is available.
+- **There's a large policy gap.** The 40-year mean of 15,154 km² is roughly three times the Task Force's 2035 target of 4,921 km².
+
+## Caveats
+
+- Forty annual data points is a small sample, and an R² of 0.52 means about half the variation is unexplained.
+- Two predictors can't capture everything. Wind, water-column stratification, freshwater discharge timing, and storms all affect oxygen, and the anomalous years show that.
+- A strong correlation with nitrogen load fits the well-established mechanism, but a regression on 40 points doesn't prove it on its own.
+
+## Stack
+
+Python. `xarray` for the multidimensional NetCDF ocean data, `pandas` for the feature table, `scikit-learn` for the Random Forest and anomaly analysis, and `matplotlib` and `cartopy` for plots, maps, and the animation. The analysis runs as four notebooks: exploration, feature engineering, modeling, and visualization.

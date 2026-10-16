@@ -1,0 +1,57 @@
+---
+title: Solace
+summary: wildfire spread simulator built on the canadian fbp system
+year: August 2026
+tags: [rust, python, simulation]
+links:
+  - { label: GitHub, href: "https://github.com/bhavv04/solace" }
+---
+
+Solace is a wildfire spread simulator for the boreal forest, built on the Canadian Forest Fire Behaviour Prediction (FBP) System and validated against the 2016 Fort McMurray fire. Given a fuel map, a weather record, and an ignition point, it should predict how the fire's perimeter grows over time, and match the real perimeter progression of Fort McMurray when checked against it.
+
+It's a work in progress. The fire behaviour core is built and checked against published numbers, and the spatial simulation and real-data validation are what's left.
+
+## What makes it different
+
+A lot of wildfire projects are dashboards that visualize historical fire data, or black-box ML models with no grounding in fire physics. Solace goes the other way. It implements the operational fire behaviour model that Canadian fire agencies actually use, drives it with real weather and fuel data, and scores its output against what happened on the ground.
+
+## Why FBP, not Rothermel
+
+Rothermel (1972) is the standard in US fire science, but it's calibrated to US fuel classifications. Fort McMurray burned through boreal spruce, which FBP models natively as fuel type C-2. FBP is also empirically calibrated against Canadian fires instead of derived from lab-scale energy-balance physics, so it's the more appropriate model for a Canadian boreal fire, and it's what real Canadian fire behaviour analysts use.
+
+## How it's built
+
+The work splits along the language boundary:
+
+- **`sim/` (Rust):** the simulation core. It holds the Fire Weather Index System (FFMC, DMC, DC, ISI, BUI), the FBP System (fuel types, rate of spread, elliptical growth), a spatial grid of fuel, elevation, and moisture per cell, and wavelet-based perimeter growth across that grid.
+- **`pipeline/` (Python):** data acquisition and preprocessing. It pulls hourly ERA5 weather for the burn window, the NRCan fuel type layer clipped to the area of interest, elevation and slope, and the actual CWFIS fire perimeters as ground truth, then merges them into the simulator's input format.
+- **`validation/` (Python):** scores simulated perimeters against actual ones with the Sørensen-Dice coefficient at each timestep.
+- **`viz/`:** an animation of perimeter growth over time.
+
+Python gets the data and validation, where xarray, rasterio, and geopandas do the heavy lifting. Rust gets the grid simulation, where performance matters once you're propagating fire across a fine grid over weeks of fire growth.
+
+## Where it stands
+
+Done:
+
+- The FWI System (FFMC, DMC, DC, ISI, BUI), following Van Wagner (1987).
+- FBP rate of spread for fuel types C-2, D-1, and M-1/M-2, checked against a published reference case from Wotton, Alexander and Taylor (2009). With FFMC 92, wind 15 km/h, and BUI 64, the model gives a rate of spread of 17.16 m/min, matching the reference to within rounding.
+
+Still to do:
+
+- Elliptical fire growth, turning head, flank, and back spread into a 2D shape.
+- The spatial grid and wavelet propagation.
+- Real data ingestion (ERA5, NRCan fuel types, DEM).
+- Validation against the CWFIS Fort McMurray 2016 perimeters.
+
+That last step is the one that matters. Until the simulated perimeter is scored against the real one, Solace is a correct implementation of a model, not yet a validated simulator.
+
+## Tradeoffs
+
+- **FBP is empirical.** It's calibrated to Canadian fuel types, which is exactly why it fits Fort McMurray, but it won't transfer to other regions without a different model.
+- **The output is only as good as the inputs.** Reanalysis weather is coarse compared to the scale a fire actually moves at, so some error will come from the data and not the model.
+- **Dice scores overlap.** It's a clean, standard way to compare perimeters at each timestep, but a good score doesn't distinguish a fire that's slightly too fast from one that's slightly too wide.
+
+## Stack
+
+Rust for the simulation core (tests run with `cargo test` in `sim/`), and Python for the data pipeline and validation, using xarray, rasterio, and geopandas.

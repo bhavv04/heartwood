@@ -1,0 +1,61 @@
+---
+title: Groat
+summary: self-hosted llm proxy that cuts your api bill
+year: June 2026 - Present
+tags: [rust, llm, proxy]
+links:
+  - { label: GitHub, href: "https://github.com/bhavv04/groat" }
+  - { label: Site, href: "https://groat.dev" }
+---
+
+Groat is a self-hosted, OpenAI-compatible proxy that sits between your app and your LLM provider and reduces what you pay without changing your code. You swap one base URL, and Groat decides for every request whether it can be answered from a semantic cache, sent to a cheaper model, or passed through as-is.
+
+It's named after the medieval English coin: a small denomination, but the unit everything was actually accounted in.
+
+## The problem
+
+Most LLM cost tooling is a dashboard that tells you what you already spent. The savings are mostly in the requests themselves. Plenty are near-duplicates with different wording, and plenty don't need the most expensive model. Groat acts on both before the request ever leaves your machine.
+
+## How it works
+
+Your app talks to Groat instead of the provider. Each request is checked against the semantic cache and scored for routing. On a cache hit the response comes back instantly and the provider is never called. On a miss the request is routed to a model and forwarded. A dashboard shows every hit, every downgraded request, and how much smaller the bill got.
+
+```text
+your app → groat → semantic cache → hit: instant response, provider never called
+                         ↓ miss
+                   intent router → cheapest suitable model → provider
+```
+
+Getting started is two commands, with no Docker and no signup:
+
+```bash
+cargo install groat
+groat up
+```
+
+Then point your existing SDK at it, for example `OpenAI(base_url="http://localhost:8787")`. Nothing else in the codebase changes.
+
+## Design decisions
+
+- **Drop-in compatibility.** Speaking the OpenAI API means the integration is one changed line. Anything that costs more than that to adopt doesn't get adopted.
+- **Semantic cache, not exact-match.** Requests are embedded and matched against prior ones by cosine similarity, so two prompts that mean the same thing hit the same entry even when the wording differs. Eviction is LRU, so the coldest entries drop first and hot paths stay cached, and the similarity threshold is tunable per route.
+- **Embeddings run locally.** Similarity is computed on-device with `candle`, so no request data leaves the machine just to decide whether it's a cache hit. For a proxy that sees every prompt, that matters.
+- **A router with three signals.** Heuristic scoring on prompt length and structure, a lightweight local classifier that estimates task difficulty, and your own explicit rules, which always win when they match. Downgrades to a cheaper model only fire once confidence clears your threshold.
+- **Prompt cache injection.** OpenAI and Anthropic discount requests that share a stable prefix, so Groat reorders static content like system prompts and few-shot examples to the front. It qualifies requests for those discounts without any manual prompt engineering.
+- **A single binary.** One `cargo install`, no Docker, no config file required to start.
+
+## Tradeoffs
+
+- **A cache hit can be wrong.** Semantic matching means two prompts that are similar but not equivalent can return the same answer. The per-route threshold is the control, but setting it is a judgment call between savings and correctness.
+- **A downgrade can cost quality.** Routing to a cheaper model is a bet that the task is easy. Gating it on confidence and letting explicit rules override it limits the risk without removing it.
+- **Embedding every request has a cost.** Running the embedding model locally keeps data private but spends CPU on the hot path of every request.
+
+## What I'd change
+
+- Measure cache quality directly, with a way to sample hits and see how often a served answer would have differed from a fresh one.
+- Tune thresholds from real traffic instead of picking them by hand.
+- Show the dashboard's savings against a counterfactual bill so the number is easy to trust.
+
+## Stack
+
+Rust, with Axum and Tokio for the server, SQLite via `sqlx` for state, LanceDB for the vector index, and `candle` for local embeddings. Apache 2.0.
