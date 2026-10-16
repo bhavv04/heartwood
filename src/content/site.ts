@@ -4,7 +4,7 @@ export const site = {
   name: "Bhavdeep Arora",
   tagline: "Building systems, tools, and research.",
   bio: "I build things across systems programming, machine learning, and software. I also conduct empirical research in applied machine learning, quantitative finance and environmental modeling, with papers on SSRN/arXiv. Most of what's below started as a question I wanted answered.",
-    email: "bhavdeepsa@gmail.com",
+  email: "bhavdeepsa@gmail.com",
   socials: [
     {
       label: "GitHub",
@@ -14,7 +14,7 @@ export const site = {
     },
     {
       label: "LinkedIn",
-      href: "https://www.linkedin.com/in/your-handle",
+      href: "https://www.linkedin.com/in/bhavdeeparora",
       icon: "linkedin",
       tip: "Where I post business updates",
     },
