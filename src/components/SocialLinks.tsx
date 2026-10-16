@@ -1,5 +1,6 @@
 import { FiFileText, FiGithub, FiLinkedin } from "react-icons/fi";
 import { site } from "@/content/site";
+import CatToggle from "@/components/CatToggle";
 import CopyEmail from "@/components/CopyEmail";
 import ThemeToggle from "@/components/ThemeToggle";
 import Tip from "@/components/Tip";
@@ -37,7 +38,8 @@ export default function SocialLinks() {
       <li>
         <CopyEmail email={site.email} className={iconBtn} />
       </li>
-      <li className="ml-auto">
+      <li className="ml-auto flex items-center gap-1">
+        <CatToggle className={iconBtn} />
         <ThemeToggle />
       </li>
     </ul>
