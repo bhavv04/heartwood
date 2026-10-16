@@ -16,21 +16,21 @@ export default function Home() {
         <SocialLinks />
       </header>
 
-      <p className="mt-5">{site.bio}</p>
+      <p className="my-4">{site.bio}</p>
 
-      <div className="my-5">
-         <ConstellationDiagram />
-        </div>
+      <div className="my-4">
+        <ConstellationDiagram />
+      </div>
 
-      <Section title="Selected projects">
+      <Section title="Selected Projects">
         <EntryList kind="projects" entries={getEntries("projects")} />
       </Section>
-    
+
       <Section title="Selected Research">
         <EntryList kind="research" entries={getEntries("research")} />
       </Section>
 
-    <FooterQuote />
+      <FooterQuote />
     </>
   );
 }

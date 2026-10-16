@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-
 :root {
   --bg: #dbc8b9;
   --fg: #3a2a22;
@@ -45,17 +44,57 @@ body {
   color: var(--fg);
 }
 
-@keyframes hw-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-@keyframes hw-fade { from { opacity: 0; } to { opacity: 1; } }
+.prose {
+  --tw-prose-body: var(--fg);
+  --tw-prose-headings: var(--fg);
+  --tw-prose-lead: var(--muted);
+  --tw-prose-links: var(--fg);
+  --tw-prose-bold: var(--fg);
+  --tw-prose-counters: var(--muted);
+  --tw-prose-bullets: var(--muted);
+  --tw-prose-hr: var(--line);
+  --tw-prose-quotes: var(--fg);
+  --tw-prose-quote-borders: var(--line);
+  --tw-prose-captions: var(--muted);
+  --tw-prose-code: var(--fg);
+  --tw-prose-pre-code: var(--fg);
+  --tw-prose-pre-bg: var(--line);
+  --tw-prose-th-borders: var(--line);
+  --tw-prose-td-borders: var(--line);
+}
+
+@keyframes hw-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes hw-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 @keyframes hw-pop {
-  from { opacity: 0; transform: scale(0); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .hw-draw {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: hw-draw var(--t, 1s) cubic-bezier(0.65, 0, 0.35, 1) var(--d, 0s) forwards;
+  animation: hw-draw var(--t, 1s) cubic-bezier(0.65, 0, 0.35, 1) var(--d, 0s)
+    forwards;
 }
 .hw-fade {
   opacity: 0;
@@ -69,7 +108,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hw-draw, .hw-fade, .hw-pop {
+  .hw-draw,
+  .hw-fade,
+  .hw-pop {
     animation: none;
     opacity: 1;
     stroke-dashoffset: 0;
@@ -78,8 +119,14 @@ body {
 }
 
 @keyframes hw-ring {
-  from { opacity: 0.5; transform: scale(1); }
-  to { opacity: 0; transform: scale(5); }
+  from {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(5);
+  }
 }
 
 .hw-ring {
@@ -90,7 +137,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hw-ring { animation: none; opacity: 0; }
+  .hw-ring {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 html {

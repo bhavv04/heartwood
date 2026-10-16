@@ -4,7 +4,7 @@ import type { IconType } from "react-icons";
 import { FiExternalLink, FiGithub, FiGlobe } from "react-icons/fi";
 import { getEntry } from "@/lib/content";
 import type { Kind } from "@/lib/types";
-import { FiChevronRight } from "react-icons/fi"; 
+import { FiChevronRight } from "react-icons/fi";
 import Prose from "@/components/Prose";
 
 // keyed by lowercase link label from frontmatter; anything else falls back to FiExternalLink
@@ -19,31 +19,37 @@ const SECTION_LABELS: Record<string, string> = {
   research: "Research",
 };
 
-export default function EntryPage({ kind, slug }: { kind: Kind; slug: string }) {
+export default function EntryPage({
+  kind,
+  slug,
+}: {
+  kind: Kind;
+  slug: string;
+}) {
   const { meta, content } = getEntry(kind, slug);
-    const sectionLabel =
+  const sectionLabel =
     SECTION_LABELS[kind] ?? kind.charAt(0).toUpperCase() + kind.slice(1);
 
   return (
     <>
-    <nav aria-label="Breadcrumb" className="text-sm">
-    <ol className="flex items-center gap-1.5">
-        <li>
-        <Link
-            href="/"
-            className="text-muted transition-colors duration-200 hover:text-sky-200"
-        >
-            {sectionLabel}
-        </Link>
-        </li>
-        <li aria-hidden className="text-muted/60">
-        <FiChevronRight size={14} />
-        </li>
-        <li aria-current="page" className="min-w-0 truncate">
-        {meta.title}
-        </li>
-    </ol>
-    </nav>
+      <nav aria-label="Breadcrumb" className="text-sm">
+        <ol className="flex items-center gap-1.5">
+          <li>
+            <Link
+              href="/"
+              className="text-muted transition-colors duration-200 hover:text-sky-200"
+            >
+              {sectionLabel}
+            </Link>
+          </li>
+          <li aria-hidden className="text-muted/60">
+            <FiChevronRight size={14} />
+          </li>
+          <li aria-current="page" className="min-w-0 truncate">
+            {meta.title}
+          </li>
+        </ol>
+      </nav>
 
       <h1 className="mt-8 text-2xl font-semibold">{meta.title}</h1>
       <p className="mt-1 text-muted">{meta.summary}</p>
@@ -60,7 +66,7 @@ export default function EntryPage({ kind, slug }: { kind: Kind; slug: string }) 
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 text-muted transition-colors duration-200 hover:text-sky-200"
                 >
-                  <Icon size={15} aria-hidden />
+                  <Icon size={16} aria-hidden />
                   {l.label}
                 </a>
               </li>

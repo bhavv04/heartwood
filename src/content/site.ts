@@ -10,13 +10,13 @@ export const site = {
       label: "GitHub",
       href: "https://github.com/bhavv04",
       icon: "github",
-      tip: "Where I occasionally open source stuff",
+      tip: "where I occasionally do open source stuff",
     },
     {
       label: "LinkedIn",
       href: "https://www.linkedin.com/in/bhavdeeparora",
       icon: "linkedin",
-      tip: "Where I post business updates",
+      tip: "where I post business updates",
     },
     {
       label: "Resume",

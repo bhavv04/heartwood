@@ -11,7 +11,7 @@ const icons = {
 } as const;
 
 const iconBtn =
-  "inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:text-fg hover:text-sky-200";
+  "inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:text-sky-700 dark:hover:text-sky-200";
 
 export default function SocialLinks() {
   return (

@@ -1,6 +1,13 @@
 import type { CSSProperties } from "react";
 import type { IconType } from "react-icons";
-import { SiGo, SiC, SiRust, SiTypescript, SiPython, SiNvidia } from "react-icons/si";
+import {
+  SiGo,
+  SiC,
+  SiRust,
+  SiTypescript,
+  SiPython,
+  SiNvidia,
+} from "react-icons/si";
 
 const ICONS: Record<Lang, IconType> = {
   Go: SiGo,
@@ -8,7 +15,7 @@ const ICONS: Record<Lang, IconType> = {
   Rust: SiRust,
   TypeScript: SiTypescript,
   Python: SiPython,
-  CUDA: SiNvidia, 
+  CUDA: SiNvidia,
 };
 
 const COLORS: Record<Lang, string> = {
@@ -27,7 +34,7 @@ type Anchor = "start" | "middle" | "end";
 type Lang = "Go" | "C" | "Rust" | "TypeScript" | "Python" | "CUDA";
 
 const HUB_R = 12;
-const LABEL_GAP = 8; 
+const LABEL_GAP = 8;
 
 type Side = "top" | "bottom" | "left" | "right";
 
@@ -66,29 +73,141 @@ type Project = {
 
 // order = order they appear in the animation
 const PROJECTS: Project[] = [
-  { name: "creduce", x: 140, y: 305, langs: ["C"], lx: 140, ly: 325, a: "middle" },
-  { name: "awk-rs", x: 140, y: 185, langs: ["Rust"], lx: 140, ly: 171, a: "middle" },
-  { name: "Groat", x: 205, y: 280, langs: ["Rust"], lx: 217, ly: 284, a: "start" },
-  { name: "Thunderhead", x: 245, y: 70, langs: ["Go", "TypeScript"], lx: 245, ly: 56, a: "middle" },
-  { name: "Funes", x: 305, y: 150, langs: ["Rust", "TypeScript"], lx: 305, ly: 136, a: "middle" },
-  { name: "Collatz Explorer", x: 320, y: 215, langs: ["Rust", "TypeScript"], lx: 320, ly: 237, a: "middle" },
-  { name: "GAIA", x: 470, y: 160, langs: ["Python", "TypeScript"], research: true, lx: 462, ly: 176, a: "end" },
-  { name: "Lacunae", x: 565, y: 150, langs: ["Python"], research: true, lx: 577, ly: 154, a: "start" },
-  { name: "Precursor", x: 600, y: 90, langs: [], research: true, lx: 600, ly: 76, a: "middle" },
-  { name: "Wattson", x: 470, y: 265, langs: ["Python", "CUDA"], lx: 482, ly: 270, a: "start" },
-  { name: "Solace", x: 610, y: 250, langs: ["Python"], lx: 610, ly: 270, a: "middle" },
-  { name: "Quantum drug binding", x: 545, y: 290, langs: ["Python"], lx: 545, ly: 310, a: "middle" },
+  {
+    name: "creduce",
+    x: 140,
+    y: 305,
+    langs: ["C"],
+    lx: 140,
+    ly: 325,
+    a: "middle",
+  },
+  {
+    name: "awk-rs",
+    x: 140,
+    y: 185,
+    langs: ["Rust"],
+    lx: 140,
+    ly: 171,
+    a: "middle",
+  },
+  {
+    name: "Groat",
+    x: 205,
+    y: 280,
+    langs: ["Rust"],
+    lx: 217,
+    ly: 284,
+    a: "start",
+  },
+  {
+    name: "Thunderhead",
+    x: 245,
+    y: 70,
+    langs: ["Go", "TypeScript"],
+    lx: 245,
+    ly: 56,
+    a: "middle",
+  },
+  {
+    name: "Funes",
+    x: 305,
+    y: 150,
+    langs: ["Rust", "TypeScript"],
+    lx: 305,
+    ly: 136,
+    a: "middle",
+  },
+  {
+    name: "Collatz Explorer",
+    x: 320,
+    y: 215,
+    langs: ["Rust", "TypeScript"],
+    lx: 320,
+    ly: 237,
+    a: "middle",
+  },
+  {
+    name: "Deadzones",
+    x: 500,
+    y: 70,
+    langs: ["Python"],
+    research: true,
+    lx: 500,
+    ly: 56,
+    a: "middle",
+  },
+  {
+    name: "GAIA",
+    x: 470,
+    y: 160,
+    langs: ["Python", "TypeScript"],
+    research: true,
+    lx: 462,
+    ly: 176,
+    a: "end",
+  },
+  {
+    name: "Lacunae",
+    x: 565,
+    y: 150,
+    langs: ["Python"],
+    research: true,
+    lx: 577,
+    ly: 154,
+    a: "start",
+  },
+  {
+    name: "Precursor",
+    x: 560,
+    y: 90,
+    langs: ["Python"],
+    research: true,
+    lx: 560,
+    ly: 76,
+    a: "middle",
+  },
+  {
+    name: "Wattson",
+    x: 470,
+    y: 265,
+    langs: ["Python", "CUDA"],
+    lx: 482,
+    ly: 270,
+    a: "start",
+  },
+  {
+    name: "Solace",
+    x: 610,
+    y: 250,
+    langs: ["Python"],
+    lx: 610,
+    ly: 270,
+    a: "middle",
+  },
+  {
+    name: "Quantum drug binding",
+    x: 545,
+    y: 290,
+    langs: ["Python"],
+    lx: 545,
+    ly: 310,
+    a: "middle",
+  },
 ];
 
-// research projects joined like a constellation, in this order
-const RESEARCH_CHAIN = ["GAIA", "Lacunae", "Precursor"];
+// research projects that build on each other, joined by the dashed line
+const RESEARCH_CHAIN = ["Deadzones", "GAIA"];
 // --------------------------------------------------------------------------
 
 const START = 1.0; // when the first project begins
 const STEP = 0.22; // seconds between projects
 
 const s = (d: number, t?: number): CSSProperties =>
-  ({ "--d": `${d.toFixed(2)}s`, ...(t ? { "--t": `${t}s` } : {}) }) as CSSProperties;
+  ({
+    "--d": `${d.toFixed(2)}s`,
+    ...(t ? { "--t": `${t}s` } : {}),
+  }) as CSSProperties;
 
 // deterministic PRNG so server and client render the same stars
 function mulberry32(a: number) {
@@ -111,7 +230,9 @@ const STARS = Array.from({ length: 38 }, () => ({
 
 const byName = Object.fromEntries(PROJECTS.map((p) => [p.name, p]));
 const chain = RESEARCH_CHAIN.map((n) => byName[n]);
-const chainPath = chain.map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`).join(" ");
+const chainPath = chain
+  .map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`)
+  .join(" ");
 const LAST = START + (PROJECTS.length - 1) * STEP;
 const CHAIN_AT = LAST + 0.8;
 
@@ -123,9 +244,13 @@ export default function ConstellationDiagram() {
       aria-label="A star chart of projects. Each project is a point linked to the languages and tools it uses: Rust, Go, C, Python, TypeScript and CUDA. Research projects are ringed and joined by a dashed line."
       className="h-auto w-full"
     >
-
       {/* language edges */}
-      <g fill="none" className="stroke-muted" strokeWidth={1} strokeOpacity={0.6}>
+      <g
+        fill="none"
+        className="stroke-muted"
+        strokeWidth={1}
+        strokeOpacity={0.6}
+      >
         {PROJECTS.flatMap((p, i) =>
           p.langs.map((l) => (
             <path
@@ -150,41 +275,53 @@ export default function ConstellationDiagram() {
         style={s(CHAIN_AT)}
       />
 
-    {/* language hubs */}
-    {(Object.keys(LANGS) as Lang[]).map((l, i) => {
-    const { x, y, side } = LANGS[l];
-    const Icon = ICONS[l];
-    const lab = hubLabel(x, y, side);
-    return (
-        <g key={l}>
-        <g className="hw-pop" style={s(0.4 + i * 0.1)}>
-            <circle cx={x} cy={y} r={HUB_R} className="fill-bg stroke-fg" strokeWidth={1} />
-            <Icon x={x - 7} y={y - 7} size={14} color={COLORS[l]} />
-        </g>
-        <text
-            x={lab.x}
-            y={lab.y}
-            dy={lab.dy}
-            textAnchor={lab.anchor}
-            fontSize={12}
-            className="fill-muted stroke-bg hw-fade"
-            strokeWidth={3}
-            paintOrder="stroke"
-            strokeLinejoin="round"
-            style={s(0.6 + i * 0.1)}
-        >
-            {l}
-        </text>
-        </g>
-    );
-    })}
+      {/* language hubs */}
+      {(Object.keys(LANGS) as Lang[]).map((l, i) => {
+        const { x, y, side } = LANGS[l];
+        const Icon = ICONS[l];
+        const lab = hubLabel(x, y, side);
+        return (
+          <g key={l}>
+            <g className="hw-pop" style={s(0.4 + i * 0.1)}>
+              <circle
+                cx={x}
+                cy={y}
+                r={HUB_R}
+                className="fill-bg stroke-fg"
+                strokeWidth={1}
+              />
+              <Icon x={x - 7} y={y - 7} size={14} color={COLORS[l]} />
+            </g>
+            <text
+              x={lab.x}
+              y={lab.y}
+              dy={lab.dy}
+              textAnchor={lab.anchor}
+              fontSize={12}
+              className="fill-muted stroke-bg hw-fade"
+              strokeWidth={3}
+              paintOrder="stroke"
+              strokeLinejoin="round"
+              style={s(0.6 + i * 0.1)}
+            >
+              {l}
+            </text>
+          </g>
+        );
+      })}
 
       {/* projects */}
       {PROJECTS.map((p, i) => {
         const t0 = START + i * STEP;
         return (
           <g key={p.name}>
-            <circle cx={p.x} cy={p.y} r={4.5} className="hw-pop fill-fg" style={s(t0 + 0.4)} />
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={4.5}
+              className="hw-pop fill-fg"
+              style={s(t0 + 0.4)}
+            />
             {p.research && (
               <circle
                 cx={p.x}
