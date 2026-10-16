@@ -6,8 +6,11 @@ import { site } from "@/content/site";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: { default: "Heartwood", template: "%s · Heartwood" },
-  description: site.tagline,
+  title: {
+    default: "Bhavdeep Arora",
+    template: "%s | Bhavdeep Arora",
+  },
+  description: site.bio,
 };
 
 export default function RootLayout({
