@@ -30,15 +30,13 @@ export default function EntryList({
   entries: Entry[];
 }) {
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 [&:hover_li:not(:hover)]:opacity-50">
+    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {entries.map((e) => (
-        <li
-          key={e.slug}
-          className="transition-opacity duration-200 motion-reduce:transition-none"
-        >
-          <div className="group relative h-full rounded-lg p-3 transition-colors duration-200 hover:bg-white/[0.05] focus-within:bg-white/[0.05] motion-reduce:transition-none">
+        <li key={e.slug}>
+          {/* only this card reacts to hover; the rest of the grid is untouched */}
+          <div className="group relative h-full rounded-lg p-3 transition-colors hover:bg-white/5 focus-within:bg-white/5">
             {/* image */}
-            <div className="relative mb-3 aspect-[16/10] overflow-hidden rounded-md bg-white/[0.04]">
+            <div className="relative mb-3 aspect-[16/10] overflow-hidden rounded-md bg-white/5">
               {e.image && (
                 <Image
                   src={e.image}
@@ -46,7 +44,7 @@ export default function EntryList({
                   fill
                   sizes="(min-width: 640px) 50vw, 100vw"
                   unoptimized={e.image.endsWith(".gif")}
-                  className="object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none"
+                  className="object-cover"
                 />
               )}
             </div>
@@ -54,11 +52,17 @@ export default function EntryList({
             {/* title + links */}
             <div className="flex items-center justify-between gap-3">
               <h3>
+                {/* the ::after stretches the link over the whole card */}
                 <Link
                   href={`/${kind}/${e.slug}`}
-                  className="after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none focus-visible:after:ring-1 focus-visible:after:ring-white/20"
+                  className="flex items-center gap-1 after:absolute after:inset-0"
                 >
                   {e.title}
+                  <FiArrowUpRight
+                    size={14}
+                    aria-hidden
+                    className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                  />
                 </Link>
               </h3>
 
@@ -74,7 +78,7 @@ export default function EntryList({
                         rel="noopener noreferrer"
                         aria-label={l.label}
                         title={l.label}
-                        className="rounded p-1 transition-colors hover:text-white focus-visible:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20"
+                        className="rounded p-1 transition-colors hover:text-white focus-visible:text-white"
                       >
                         <Icon size={16} aria-hidden />
                       </a>

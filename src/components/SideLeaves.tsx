@@ -1,8 +1,12 @@
-import { useId, type ReactNode } from "react";
+"use client";
+
+import { useEffect, useId, useRef, type ReactNode } from "react";
 
 const TILE_W = 340;
 const TILE_H = 900;
 // solid at the screen edge, gone before the content column
+// how fast the garden drifts compared to the page (0 = static, 1 = moves with the content)
+const SCROLL_SPEED = 0.35;
 const FADE = "linear-gradient(to right, #000 0%, #000 55%, transparent 100%)";
 
 const f = (n: number) => n.toFixed(1);
@@ -444,8 +448,36 @@ function Fan({ y }: { y: number }) {
 // ---------- layer ----------
 
 export default function SideLeaves() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  // parallax: slide the (endlessly repeating) garden up as the page scrolls
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const y = (Math.max(0, window.scrollY) * SCROLL_SPEED) % TILE_H;
+      el.style.setProperty("--garden-y", `${-y}px`);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+
   return (
     <div
+      ref={ref}
       aria-hidden
       className="pointer-events-none fixed inset-0 -z-10 hidden select-none lg:block"
     >
@@ -475,13 +507,18 @@ function Side({ flip = false }: { flip?: boolean }) {
     >
       <svg
         width="100%"
-        height="100%"
         fill="none"
         stroke="currentColor"
         strokeWidth={1}
         strokeLinecap="round"
         strokeLinejoin="round"
         className="block"
+        // one extra tile of height, so sliding up never reveals a gap
+        style={{
+          height: `calc(100% + ${TILE_H}px)`,
+          transform: "translate3d(0, var(--garden-y, 0px), 0)",
+          willChange: "transform",
+        }}
       >
         <defs>
           <pattern

@@ -25,7 +25,6 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
         <CatProvider>
-          <SideLeaves />
           <main className="mx-auto max-w-2xl px-6 py-16">{children}</main>
           <Oneko />
         </CatProvider>
