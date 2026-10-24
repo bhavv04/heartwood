@@ -18,11 +18,5 @@ export const site = {
       icon: "linkedin",
       tip: "where I post business updates",
     },
-    {
-      label: "Resume",
-      href: "/resume.pdf",
-      icon: "resume",
-      tip: "My resume (PDF)",
-    },
   ] satisfies { label: string; href: string; icon: SocialIcon; tip: string }[],
 };

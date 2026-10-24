@@ -28,7 +28,7 @@ export default function FooterQuote() {
   if (!quote) return null;
 
   return (
-    <footer className="mt-12 space-y-1 text-[0.8rem] leading-normal text-muted">
+    <footer className="space-y-1 text-xs text-muted px-4">
       <p>&ldquo;{quote.quoteText}&rdquo;</p>
       <p>&mdash; {quote.quoteAuthor}</p>
     </footer>

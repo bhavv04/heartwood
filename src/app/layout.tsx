@@ -4,7 +4,6 @@ import "./globals.css";
 import { site } from "@/content/site";
 import { CatProvider } from "@/context/CatContext";
 import Oneko from "@/components/Oneko";
-import SideLeaves from "@/components/SideLeaves";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 

@@ -6,6 +6,9 @@ import SocialLinks from "@/components/SocialLinks";
 import EntryList from "@/components/EntryList";
 import ConstellationDiagram from "@/components/ConstellationDiagram";
 import FooterQuote from "@/components/FooterQuote";
+import { FaTools } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
+import { CiSearch } from "react-icons/ci";
 
 export default function Home() {
   return (
@@ -22,11 +25,17 @@ export default function Home() {
         <ConstellationDiagram />
       </div>
 
-      <Section title="Selected Projects">
+      <Section
+        title="Selected Projects"
+        icon={<FaTools size={16} aria-hidden />}
+      >
         <EntryList kind="projects" entries={getEntries("projects")} />
       </Section>
 
-      <Section title="Selected Research">
+      <Section
+        title="Selected Research"
+        icon={<CiSearch size={16} aria-hidden />}
+      >
         <EntryList kind="research" entries={getEntries("research")} />
       </Section>
 
