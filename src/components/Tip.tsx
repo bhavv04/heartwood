@@ -27,7 +27,7 @@ export default function Tip({
       {children}
       <span
         role="tooltip"
-        className={`pointer-events-none absolute bottom-full z-20 mb-2 whitespace-nowrap rounded-md bg-line px-2 py-1 text-xs text-fg opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 ${position[align]}`}
+        className={`pointer-events-none absolute bottom-full z-20 mb-2 whitespace-nowrap rounded-md bg-line px-2 py-1 text-xs text-fg opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-has-[:focus-visible]:opacity-100 ${position[align]}`}
       >
         {text}
         <span

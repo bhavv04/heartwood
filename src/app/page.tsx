@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { site } from "@/content/site";
 import { getEntries } from "@/lib/content";
 import Section from "@/components/Section";
@@ -7,17 +6,20 @@ import EntryList from "@/components/EntryList";
 import ConstellationDiagram from "@/components/ConstellationDiagram";
 import FooterQuote from "@/components/FooterQuote";
 import { FaTools } from "react-icons/fa";
-import { FaSearch } from "react-icons/fa";
-import { CiSearch } from "react-icons/ci";
+import { GiMountainClimbing } from "react-icons/gi";
+import ProfileCarousel from "@/components/ProfileCarousel";
 
 export default function Home() {
   return (
     <>
-      <header>
-        <h1 className="text-xl font-semibold">{site.name}</h1>
-        <p className="text-neutral-500">{site.tagline}</p>
-        <SocialLinks />
-      </header>
+      <div className="flex items-center gap-8">
+        <ProfileCarousel />
+        <header className="min-w-0 flex-1">
+          <h1 className="text-xl font-semibold">{site.name}</h1>
+          <p className="text-neutral-500">{site.tagline}</p>
+          <SocialLinks />
+        </header>
+      </div>
 
       <p className="my-4">{site.bio}</p>
 
@@ -27,14 +29,14 @@ export default function Home() {
 
       <Section
         title="Selected Projects"
-        icon={<FaTools size={16} aria-hidden />}
+        icon={<FaTools size={21} aria-hidden />}
       >
         <EntryList kind="projects" entries={getEntries("projects")} />
       </Section>
 
       <Section
         title="Selected Research"
-        icon={<CiSearch size={16} aria-hidden />}
+        icon={<GiMountainClimbing size={24} aria-hidden />}
       >
         <EntryList kind="research" entries={getEntries("research")} />
       </Section>

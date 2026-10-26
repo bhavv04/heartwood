@@ -12,7 +12,7 @@ const icons = {
 } as const;
 
 const iconBtn =
-  "inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:text-sky-700 dark:hover:text-sky-200";
+  "inline-flex h-8 w-7 items-center justify-center rounded-md text-muted transition-colors hover:text-sky-700 dark:hover:text-sky-200 sm:w-8";
 
 export default function SocialLinks() {
   return (
@@ -38,8 +38,10 @@ export default function SocialLinks() {
       <li>
         <CopyEmail email={site.email} className={iconBtn} />
       </li>
-      <li className="ml-auto flex items-center gap-1">
+      <li>
         <CatToggle className={iconBtn} />
+      </li>
+      <li className="ml-auto">
         <ThemeToggle />
       </li>
     </ul>
