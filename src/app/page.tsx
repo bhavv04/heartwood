@@ -7,21 +7,17 @@ import ConstellationDiagram from "@/components/ConstellationDiagram";
 import FooterQuote from "@/components/FooterQuote";
 import { FaTools } from "react-icons/fa";
 import { GiMountainClimbing } from "react-icons/gi";
-import ProfileCarousel from "@/components/ProfileCarousel";
 
 export default function Home() {
   return (
     <>
-      <div className="flex items-center gap-8">
-        <ProfileCarousel />
-        <header className="min-w-0 flex-1">
-          <h1 className="text-xl font-semibold">{site.name}</h1>
-          <p className="text-neutral-500">{site.tagline}</p>
-          <SocialLinks />
-        </header>
-      </div>
+      <header>
+        <h1 className="text-xl font-semibold">{site.name}</h1>
+        <p className="text-neutral-500">{site.tagline}</p>
+        <SocialLinks />
+      </header>
 
-      <p className="my-4">{site.bio}</p>
+      <p className="my-2">{site.bio}</p>
 
       <div className="my-4">
         <ConstellationDiagram />

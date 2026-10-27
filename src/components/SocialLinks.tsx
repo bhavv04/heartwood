@@ -12,11 +12,11 @@ const icons = {
 } as const;
 
 const iconBtn =
-  "inline-flex h-8 w-7 items-center justify-center rounded-md text-muted transition-colors hover:text-sky-700 dark:hover:text-sky-200 sm:w-8";
+  "inline-flex items-center justify-center rounded-md text-muted transition-colors hover:text-sky-700 dark:hover:text-sky-200";
 
 export default function SocialLinks() {
   return (
-    <ul className="-ml-2 mt-2 flex items-center">
+    <ul className="mt-2 flex items-center gap-3">
       {site.socials.map((s, i) => {
         const Icon = icons[s.icon];
         return (
@@ -40,9 +40,6 @@ export default function SocialLinks() {
       </li>
       <li>
         <CatToggle className={iconBtn} />
-      </li>
-      <li className="ml-auto">
-        <ThemeToggle />
       </li>
     </ul>
   );
