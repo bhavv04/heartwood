@@ -6,8 +6,7 @@ export type Entry = {
   slug: string;
   title: string;
   summary: string;
-  image?: string;
-  imageAlt?: string;
+  logo?: string;
   year: number;
   tags?: string[];
   links?: EntryLink[];

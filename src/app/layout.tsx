@@ -5,7 +5,11 @@ import { site } from "@/content/site";
 import { CatProvider } from "@/context/CatContext";
 import Oneko from "@/components/Oneko";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -21,10 +25,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased`}>
+    <html lang="en" className={inter.variable}>
+      <body className="font-sans antialiased">
         <CatProvider>
-          <main className="mx-auto max-w-2xl px-6 py-16">{children}</main>
+          <main className="mx-auto max-w-2xl px-6 py-10">{children}</main>
           <Oneko />
         </CatProvider>
       </body>

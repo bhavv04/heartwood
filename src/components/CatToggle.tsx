@@ -14,7 +14,7 @@ export default function CatToggle({ className = "" }: { className?: string }) {
         onClick={toggleCat}
         aria-label={label}
         aria-pressed={showCat}
-        className={`${className} ${showCat ? "" : "opacity-50"}`}
+        className={`${className} ${showCat ? "cursor-pointer" : "opacity-50 cursor-pointer"}`}
       >
         <LuCat size={18} />
       </button>
