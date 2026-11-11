@@ -1,34 +1,35 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --bg: #dbc8b9;
-  --fg: #3a2a22;
-  --muted: #7a5e4f;
-  --line: #ecd3c0;
+  --bg: #f8f8f8;
+  --fg: #1c1c1c;
+  --muted: #6e6e6e;
+  --line: #ececec;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1c1917;
-    --fg: #e7e5e4;
-    --muted: #a8a29e;
-    --line: #44403c;
+    --bg: #f7efe4;
+    --fg: #2e2119;
+    --muted: #7d6757;
+    --line: #ecdfd0;
   }
 }
 
 :root[data-theme="light"] {
-  --bg: #fbeadc;
-  --fg: #3a2a22;
-  --muted: #7a5e4f;
-  --line: #ecd3c0;
+  --bg: #f7efe4;
+  --fg: #2e2119;
+  --muted: #7d6757;
+  --line: #ecdfd0;
 }
 
 :root[data-theme="dark"] {
-  --bg: #1c1917;
-  --fg: #e7e5e4;
-  --muted: #a8a29e;
-  --line: #44403c;
+  --bg: #0a0a0a;
+  --fg: #f2f2f2;
+  --muted: #8c8c8c;
+  --line: #1d1d1d;
 }
 
 @theme inline {
@@ -42,6 +43,9 @@
 body {
   background: var(--bg);
   color: var(--fg);
+  transition:
+    background-color 0.4s ease,
+    color 0.4s ease;
 }
 
 .prose {
@@ -147,25 +151,4 @@ html {
   scrollbar-width: thin;
   scrollbar-color: var(--muted) var(--bg); /* thumb, track */
   scrollbar-gutter: stable;
-}
-
-/* Safari < 18.2 and older Chromium ignore the standard properties, so give them the webkit version */
-@supports not (scrollbar-color: auto) {
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    background: var(--muted);
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    border-radius: 9999px;
-    border: 2px solid transparent;
-    background-clip: content-box; /* the transparent border makes the thumb look thinner */
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: color-mix(in srgb, var(--muted) 45%, transparent);
-    background-clip: content-box;
-  }
 }

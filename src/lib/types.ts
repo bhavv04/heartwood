@@ -7,6 +7,7 @@ export type Entry = {
   title: string;
   summary: string;
   logo?: string;
+  image?: string;
   year: number;
   tags?: string[];
   links?: EntryLink[];
