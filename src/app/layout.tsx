@@ -4,6 +4,7 @@ import "./globals.css";
 import { site } from "@/content/site";
 import { CatProvider } from "@/context/CatContext";
 import Oneko from "@/components/Oneko";
+import SkyTheme from "@/components/SkyTheme";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,9 +26,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="font-sans antialiased">
         <CatProvider>
+          <SkyTheme />
           <main className="mx-auto max-w-2xl px-6 py-10">{children}</main>
           <Oneko />
         </CatProvider>

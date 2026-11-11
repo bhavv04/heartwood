@@ -2,7 +2,6 @@ import { FiFileText, FiGithub, FiLinkedin } from "react-icons/fi";
 import { site } from "@/content/site";
 import CatToggle from "@/components/CatToggle";
 import CopyEmail from "@/components/CopyEmail";
-import ThemeToggle from "@/components/ThemeToggle";
 import Tip from "@/components/Tip";
 
 const icons = {
@@ -12,11 +11,11 @@ const icons = {
 } as const;
 
 const iconBtn =
-  "inline-flex items-center justify-center rounded-md text-muted transition-colors hover:text-sky-700 dark:hover:text-sky-200";
+  "inline-flex h-8 w-8 items-center justify-center rounded-sm bg-line text-muted transition-colors hover:text-fg";
 
 export default function SocialLinks() {
   return (
-    <ul className="mt-2 flex items-center gap-3">
+    <ul className="mt-3 flex items-center gap-2">
       {site.socials.map((s, i) => {
         const Icon = icons[s.icon];
         return (
@@ -29,7 +28,7 @@ export default function SocialLinks() {
                 rel="noreferrer"
                 className={iconBtn}
               >
-                <Icon size={18} />
+                <Icon size={16} />
               </a>
             </Tip>
           </li>
