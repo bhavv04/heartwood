@@ -24,7 +24,7 @@ export default function EntryList({ entries }: { entries: WorkEntry[] }) {
     <div>
       <ul
         ref={row}
-        className="-mx-6 flex snap-x gap-3 overflow-x-auto px-6 pb-1 scroll-pl-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="-mx-6 flex snap-x gap-3 overflow-x-auto px-6 pb-2 scroll-pl-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {entries.map((e) => (
           <li
@@ -49,8 +49,10 @@ export default function EntryList({ entries }: { entries: WorkEntry[] }) {
                 </span>
               )}
 
-              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/65 to-transparent px-4 pb-3 pt-10 text-white">
-                <span className="truncate text-xs">{e.title}</span>
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-4 pb-3 pt-10 text-white">
+                <span className="truncate text-xs bg-stone-700 px-2 rounded-xl">
+                  {e.title}
+                </span>
                 <FiArrowUpRight size={16} aria-hidden />
               </div>
             </Link>
