@@ -5,6 +5,7 @@ import { site } from "@/content/site";
 import { CatProvider } from "@/context/CatContext";
 import Oneko from "@/components/Oneko";
 import SkyTheme from "@/components/SkyTheme";
+import FooterScene from "@/components/Footerscene";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -37,7 +38,8 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <CatProvider>
           <SkyTheme />
-          <main className="mx-auto max-w-2xl px-6 py-10">{children}</main>
+          <main className="mx-auto max-w-2xl px-6 pb-12">{children}</main>
+          <FooterScene />
           <Oneko />
         </CatProvider>
       </body>

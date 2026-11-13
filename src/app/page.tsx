@@ -5,9 +5,8 @@ import SocialLinks from "@/components/SocialLinks";
 import EntryList, { type WorkEntry } from "@/components/EntryList";
 import ConstellationDiagram from "@/components/ConstellationDiagram";
 import FooterQuote from "@/components/FooterQuote";
-import { FaTools, FaRegClock } from "react-icons/fa";
+import { FaTools } from "react-icons/fa";
 import Image from "next/image";
-import Now from "@/components/Now";
 
 export default function Home() {
   const work: WorkEntry[] = [
@@ -17,7 +16,7 @@ export default function Home() {
 
   return (
     <>
-      <header className="-mt-16">
+      <header className="">
         <Image
           src="/picture.jpeg"
           alt={site.name}
@@ -31,7 +30,24 @@ export default function Home() {
         <SocialLinks />
       </header>
 
-      <p className="my-4">{site.bio}</p>
+      <div className="my-4 space-y-4">
+        <p>{site.bio}</p>
+        <p className="">
+          When I&apos;m not working, I&apos;m usually reading fantasy or the
+          classics (currently reading{" "}
+          <a
+            href="https://www.goodreads.com/book/show/35052265"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-fg underline decoration-muted/70 underline-offset-4 transition-colors hover:decoration-fg"
+          >
+            Bloody Rose by Nicholas Eames
+          </a>
+          ), out trekking or cycling, lifting, or building something in the
+          woodshop. I&apos;m always learning something new, and I&apos;m
+          naturally curious about the nature and the cosmos.
+        </p>
+      </div>
 
       <div className="my-4">
         <ConstellationDiagram />
@@ -39,10 +55,6 @@ export default function Home() {
 
       <Section title="Selected Work" icon={<FaTools size={21} aria-hidden />}>
         <EntryList entries={work} />
-      </Section>
-
-      <Section title="Now" icon={<FaRegClock size={21} aria-hidden />}>
-        <Now />
       </Section>
 
       <FooterQuote />
