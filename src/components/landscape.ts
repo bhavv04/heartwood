@@ -25,8 +25,15 @@ const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const OFF = (P - DOT) / 2;
 const dot = (ctx: Ctx, x: number, y: number) =>
   ctx.fillRect(x * P + OFF, y * P + OFF, DOT, DOT);
-const cell = (ctx: Ctx, x: number, y: number) =>
-  ctx.fillRect(x * P, y * P, P, P);
+
+// a dot of any size, centred in its cell. By day the scene is drawn with
+// bigger dots so it reads as solid pixel art on a light page instead of a
+// see-through mesh; at night it shrinks back to the fine dither.
+const dotS = (ctx: Ctx, x: number, y: number, size: number) =>
+  ctx.fillRect(x * P + (P - size) / 2, y * P + (P - size) / 2, size, size);
+// dot size by day (DOT = fine 2px dither like night; raise to 3 or P for chunkier, more solid pixels)
+const DAY_DOT = DOT;
+const mix = (day: number, night: number, e: number) => day + (night - day) * e;
 
 const rgb = (h: string) =>
   [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -126,19 +133,20 @@ function buildRidge(cols: number, L: Layer) {
 // Kept dim on purpose: nothing in the scene goes anywhere near white, apart
 // from the snow caps, which are the lightest thing on the mountains.
 const TERRAIN_DAY = [
-  "#747474",
-  "#4c4c4c",
-  "#575757",
-  "#2e2e2e",
-  "#3a3a3a",
-  "#1e1e1e",
-  "#111111",
-  "#2a2a2a",
-  "#6a6a6a",
-  "#6c6c6c",
-  "#b8b8b8",
-  "#8c8c8c",
+  "#a9b9d0", // far lit
+  "#8497b4", // far shade
+  "#869cbb", // mid lit
+  "#5d7396", // mid shade
+  "#5f8f84", // foothills lit
+  "#3d6a63", // foothills shade
+  "#2a3d57", // ridge line
+  "#6f8a43", // ground
+  "#c6d3df", // mist
+  "#d2b183", // path
+  "#e6eef8", // snow lit
+  "#b4c6de", // snow shade
 ].map(rgb);
+const BG_DAY = rgb("#f7efe4"); // light page colour (see globals.css)
 const TERRAIN_NIGHT = [
   "#404040",
   "#2c2c2c",
@@ -156,14 +164,16 @@ const TERRAIN_NIGHT = [
 
 /* ------------------------------ trees ------------------------------ */
 // [highlight, light, body, shadow]
-const TREE_DAY = ["#848484", "#686868", "#4c4c4c", "#303030"].map(rgb);
+// day: pine greens, dark enough to stand out against the cream page
+const TREE_DAY = ["#52a57a", "#2f8260", "#1c5d4a", "#0e3a32"].map(rgb);
 const TREE_NIGHT = ["#6e6e6e", "#545454", "#3a3a3a", "#222222"].map(rgb);
 // far trees fade toward this, which gives the forest some depth
-const FOG_DAY = rgb("#5c5c5c");
+const FOG_DAY = rgb("#a9cbbf"); // hazy blue-green for the far trees
 const FOG_NIGHT = rgb("#4a4a4a");
 // share of dots kept per tone: highlights are the sparsest, so the foliage
 // reads as a stipple of dots rather than a solid mass
 const TREE_DENS = [0.6, 0.78, 0.92, 1];
+const TREE_DENS_DAY = TREE_DENS; // same sparse stipple by day and night
 
 type Nest = { dx: number; dy: number }; // a spot inside the foliage, relative to (cx, by)
 type Tree = {
@@ -177,6 +187,7 @@ type Tree = {
   shake: number; // 1 right after a click, decays to 0
   glow: number; // hover
 };
+const MIN_EXPOSED = 14; // cells of a tree that must show for it to be kept
 const keyOf = (x: number, y: number) => (y + 64) * 64 + (x + 32);
 
 // A pine is a stack of overlapping tiers. Each tier has a ragged edge (left and
@@ -259,14 +270,22 @@ function buildTree(
 }
 
 /* ------------------------------ birds ------------------------------ */
-const BIRD_UP = ["#.....#", ".#...#.", "..###.."];
-const BIRD_DOWN = ["..###..", ".#...#.", "#.....#"];
-const BIRD_DAY = rgb("#161616");
-const BIRD_NIGHT = rgb("#a8a8a8");
-const RETURN_AFTER = 16; // seconds until a gone bird is back in its tree
+// Minimal birds: a thin one-colour "v" of 2px pixels whose wings beat
+// up -> level -> down -> level.
+const BIRD_PX = 2; // css px per sprite pixel
+const BIRD_FRAMES = [
+  ["#.....#", ".#...#.", "..#.#..", "...#..."], // wings up
+  [".......", "##...##", "..###..", "......."], // level
+  ["...#...", "..#.#..", ".#...#.", "#.....#"], // wings down
+  [".......", "##...##", "..###..", "......."], // level
+];
+const BIRD_W = 7;
+const BIRD_H = 4;
+const BIRD_DAY = rgb("#1c1c1c");
+const BIRD_NIGHT = rgb("#c8c8c8");
 
-// hidden: inside a tree, not drawn. flee: flying away. gone: off screen, will
-// slip back into its tree after a while so the trees can be clicked again.
+// hidden: inside a tree, not drawn. flee: flying away. gone: left the scene for
+// good (a tree gives up its birds once, the first time it is shaken).
 type BirdState = "hidden" | "flee" | "gone";
 type Bird = {
   tree: number;
@@ -279,21 +298,36 @@ type Bird = {
   dir: number;
   phase: number;
   scareAt: number; // time the bird bursts out (0 = not startled)
-  returnAt: number; // time the bird is back in the tree (0 = n/a)
 };
 
-function sprite(
+/** Draw a bird sprite centred on (cx, cy), in css px. */
+function drawBird(
   ctx: Ctx,
-  rows: string[],
-  x0: number,
-  y0: number,
+  frame: string[],
+  cx: number,
+  cy: number,
   flip: boolean,
 ) {
-  rows.forEach((row, j) => {
-    for (let i = 0; i < row.length; i++)
-      if (row[flip ? row.length - 1 - i : i] === "#") cell(ctx, x0 + i, y0 + j);
+  const x0 = Math.round((cx - (BIRD_W * BIRD_PX) / 2) / BIRD_PX) * BIRD_PX;
+  const y0 = Math.round((cy - (BIRD_H * BIRD_PX) / 2) / BIRD_PX) * BIRD_PX;
+  frame.forEach((row, j) => {
+    for (let i = 0; i < BIRD_W; i++) {
+      if (row[flip ? BIRD_W - 1 - i : i] !== "#") continue;
+      ctx.fillRect(x0 + i * BIRD_PX, y0 + j * BIRD_PX, BIRD_PX, BIRD_PX);
+    }
   });
 }
+
+// needles / leaves shaken loose from a tree when it is clicked
+type Leaf = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  max: number;
+  tone: number;
+};
 
 /* ------------------------------ grass ------------------------------ */
 // A strip of blades along the bottom edge, drawn in front of the trees. They
@@ -309,13 +343,13 @@ type Blade = {
   layer: 0 | 1 | 2; // 0 = rearmost (hazy), 1 = middle, 2 = front
 };
 const GRASS_BASE = ROWS - 1; // bottom row
-const GRASS_DAY = ["#222222", "#505050"].map(rgb); // [stem, tip]
+const GRASS_DAY = ["#4d7d1f", "#a6d443"].map(rgb); // [stem, tip]
 const GRASS_NIGHT = ["#626262", "#8e8e8e"].map(rgb);
 // middle layer: lighter / hazier than the front, so it sits further away
-const GRASS_BACK_DAY = ["#3c3c3c", "#707070"].map(rgb);
+const GRASS_BACK_DAY = ["#6c9a35", "#bddc5e"].map(rgb);
 const GRASS_BACK_NIGHT = ["#484848", "#6c6c6c"].map(rgb);
 // rearmost layer: the haziest of all
-const GRASS_MID_DAY = ["#505050", "#808080"].map(rgb);
+const GRASS_MID_DAY = ["#8db055", "#d4e78e"].map(rgb);
 const GRASS_MID_NIGHT = ["#3a3a3a", "#5a5a5a"].map(rgb);
 
 /* ------------------------------ scene ------------------------------ */
@@ -323,9 +357,11 @@ export type Pointer = { x: number; y: number } | null; // in cells
 
 export function createLandscape() {
   let buckets: number[][] = [];
+  let holes: number[][] = []; // cells the dither left out; filled softly by day
   let trees: Tree[] = [];
   let blades: Blade[] = [];
   let birds: Bird[] = [];
+  let leaves: Leaf[] = [];
   let lastT = 0;
   let reduced = false;
 
@@ -333,6 +369,7 @@ export function createLandscape() {
   function layout(cols: number) {
     /* mountains */
     buckets = Array.from({ length: 12 }, () => []);
+    holes = Array.from({ length: 12 }, () => []);
     const ridges = LAYERS.map((L) => buildRidge(cols, L));
     // An empty dirt path: it climbs from the bottom edge towards the horizon,
     // narrowing and winding a little. No trees or grass grow on it.
@@ -362,10 +399,12 @@ export function createLandscape() {
             const pd =
               0.93 * soft * (0.85 + 0.3 * vnoise((x + y * 0.6) * 0.3, 83));
             if (bay(x, y) < pd) buckets[9].push(x, y);
+            else holes[9].push(x, y);
             continue;
           }
           const d = GROUND_DENS * (0.8 + 0.4 * vnoise((x * 0.5 + y) * 0.2, 41));
           if (bay(x, y) < d) buckets[7].push(x, y);
+          else holes[7].push(x, y);
           continue;
         }
         // frontmost range that covers this cell
@@ -411,6 +450,7 @@ export function createLandscape() {
             L.base - L.rise * L.snow + (vnoise(x * 0.3, L.seed + 70) - 0.5) * 5;
           if (y < line && !(gully && y - rr > 3)) {
             if (bay(x, y) < 0.95) buckets[slope > 0 ? 10 : 11].push(x, y);
+            else holes[slope > 0 ? 10 : 11].push(x, y);
             continue;
           }
         }
@@ -420,12 +460,13 @@ export function createLandscape() {
           (lit ? 1 : 0.92) *
           (0.85 + 0.3 * vnoise((x + y * 0.7) * 0.12, 5 + layer));
         if (bay(x, y) < d) buckets[layer * 2 + (lit ? 0 : 1)].push(x, y);
+        else holes[layer * 2 + (lit ? 0 : 1)].push(x, y);
       }
     }
 
     /* trees: a dense forest, many small far trees and fewer big near ones */
     const rnd = rng(12345);
-    const n = clamp(Math.round(cols / 4.2), 30, 130);
+    const n = clamp(Math.round(cols / 3.2), 40, 180);
     trees = [];
     for (let i = 0; i < n; i++) {
       const slot = cols / n;
@@ -440,11 +481,43 @@ export function createLandscape() {
     }
     trees.sort((a, b) => a.by - b.by || a.cx - b.cx); // far trees first
 
+    // Click-testing picks the front-most tree, so a tree that is completely
+    // hidden behind nearer ones could never be clicked. Drop those: every tree
+    // that is left has a patch of its own showing, and so is shakeable.
+    const covered = new Set<number>();
+    const cellId = (x: number, y: number) => (y + 128) * 65536 + (x + 1000);
+    const visible: Tree[] = [];
+    for (let i = trees.length - 1; i >= 0; i--) {
+      const tr = trees[i];
+      let free = 0;
+      tr.keys.forEach((k) => {
+        const x = tr.cx + ((k % 64) - 32),
+          y = tr.by + (Math.floor(k / 64) - 64);
+        if (
+          x >= 0 &&
+          x < cols &&
+          y >= 0 &&
+          y < ROWS &&
+          !covered.has(cellId(x, y))
+        )
+          free++; // only cells actually on screen count
+      });
+      if (free < MIN_EXPOSED) continue;
+      tr.keys.forEach((k) => {
+        covered.add(
+          cellId(tr.cx + ((k % 64) - 32), tr.by + (Math.floor(k / 64) - 64)),
+        );
+      });
+      visible.push(tr);
+    }
+    trees = visible.reverse();
+
     /* birds: hidden in the foliage, one to three per tree, until a tree is clicked */
     birds = [];
+    leaves = [];
     trees.forEach((tr, ti) => {
-      if (rnd() < 0.25) return; // a few empty trees
-      const k = 1 + Math.floor(rnd() * 3);
+      // every tree hides one or two birds
+      const k = rnd() < 0.5 ? 1 : 2;
       for (let j = 0; j < k && j < tr.nests.length; j++)
         birds.push({
           tree: ti,
@@ -457,7 +530,6 @@ export function createLandscape() {
           dir: 1,
           phase: rnd() * 6.28,
           scareAt: 0,
-          returnAt: 0,
         });
     });
 
@@ -497,10 +569,21 @@ export function createLandscape() {
 
   /** Mountains + ground. Static, so the caller can draw it once into an offscreen canvas. */
   function drawTerrain(ctx: Ctx, e: number) {
+    // by day, the cells the dither skipped get a pale wash of the same colour,
+    // so the rock and ground read as solid with a stipple texture, not a mesh
+    if (DAY_DOT > DOT && e < 0.98) {
+      ctx.globalAlpha = 1 - e;
+      holes.forEach((pts, i) => {
+        ctx.fillStyle = css(lerp3(TERRAIN_DAY[i], BG_DAY, 0.55));
+        for (let j = 0; j < pts.length; j += 2)
+          ctx.fillRect(pts[j] * P, pts[j + 1] * P, P, P);
+      });
+    }
     ctx.globalAlpha = 1;
     buckets.forEach((pts, i) => {
       ctx.fillStyle = css(lerp3(TERRAIN_DAY[i], TERRAIN_NIGHT[i], e));
-      for (let j = 0; j < pts.length; j += 2) dot(ctx, pts[j], pts[j + 1]);
+      const sz = mix(DAY_DOT, DOT, e);
+      for (let j = 0; j < pts.length; j += 2) dotS(ctx, pts[j], pts[j + 1], sz);
     });
   }
 
@@ -508,13 +591,16 @@ export function createLandscape() {
     Math.round(
       tr.shake * Math.sin(t * 26 + tr.cx) * 2.4 * clamp(-relY / (tr.h + 3)),
     );
+  // exact hit-test: the pointer has to be over one of the tree's own cells
+  // (crown or trunk), so clicks in empty sky or between trees do nothing
+  // (keyOf packs x into 64 columns, so positions outside that range have to be
+  // rejected up front, otherwise they wrap round onto another row of the tree)
   const hit = (tr: Tree, x: number, y: number) => {
-    const lx = Math.round(x) - tr.cx,
-      ly = Math.round(y) - tr.by;
-    for (let dy = -1; dy <= 1; dy++)
-      for (let dx = -1; dx <= 1; dx++)
-        if (tr.keys.has(keyOf(lx + dx, ly + dy))) return true;
-    return false;
+    const lx = Math.floor(x) - tr.cx,
+      ly = Math.floor(y) - tr.by;
+    return (
+      lx >= -32 && lx < 32 && ly >= -64 && ly < 64 && tr.keys.has(keyOf(lx, ly))
+    );
   };
   /** index of the front-most tree under cell (x, y), or -1 */
   function treeAt(x: number, y: number) {
@@ -549,13 +635,15 @@ export function createLandscape() {
       tr.tones.forEach((pts, k) => {
         const c = lerp3(base[k], fog, tr.fog * 0.4);
         ctx.fillStyle = css(lerp3(c, [200, 200, 200], tr.glow * 0.12));
-        const keep = TREE_DENS[k];
+        const keep = mix(TREE_DENS_DAY[k], TREE_DENS[k], e);
+        const tsz = mix(DAY_DOT, DOT, e);
         for (let j = 0; j < pts.length; j += 2) {
           if (bay(pts[j] + 1, pts[j + 1]) >= keep) continue;
-          dot(
+          dotS(
             ctx,
             tr.cx + pts[j] + sway(tr, pts[j + 1], t),
             tr.by + pts[j + 1],
+            tsz,
           );
         }
       });
@@ -579,10 +667,6 @@ export function createLandscape() {
         b.vx = b.dir * (6 + Math.random() * 14);
         b.vy = -(14 + Math.random() * 12);
       } else if (b.state === "gone") {
-        if (b.returnAt && t >= b.returnAt) {
-          b.state = "hidden";
-          b.returnAt = 0;
-        }
         continue;
       }
 
@@ -592,12 +676,32 @@ export function createLandscape() {
       b.x += b.vx * dt;
       b.y += b.vy * dt + Math.sin(t * 9 + b.phase) * 0.12;
       if (b.y < -6 || b.x < -8 || b.x > cols + 8) {
-        b.state = "gone";
-        b.returnAt = t + RETURN_AFTER + Math.random() * 10;
+        b.state = "gone"; // flew out of the scene, and does not come back
         continue;
       }
-      const frame = Math.floor(t * 10 + b.phase) & 1 ? BIRD_UP : BIRD_DOWN;
-      sprite(ctx, frame, Math.round(b.x) - 3, Math.round(b.y) - 1, false);
+      const frame = BIRD_FRAMES[Math.floor(t * 12 + b.phase) & 3];
+      drawBird(ctx, frame, b.x * P, b.y * P, b.dir < 0);
+    }
+
+    /* needles shaken loose by a click: they tumble down and fade out */
+    if (leaves.length) {
+      const bodyCol = base[2];
+      for (let i = leaves.length - 1; i >= 0; i--) {
+        const lf = leaves[i];
+        lf.life -= dt;
+        if (lf.life <= 0) {
+          leaves.splice(i, 1);
+          continue;
+        }
+        lf.vy = Math.min(lf.vy + 14 * dt, 9);
+        lf.x += (lf.vx + Math.sin(t * 7 + lf.max * 9) * 2.5) * dt;
+        lf.y += lf.vy * dt;
+        ctx.globalAlpha = clamp(lf.life / (lf.max * 0.5));
+        ctx.fillStyle = css(lerp3(bodyCol, base[lf.tone], 0.5));
+        dot(ctx, Math.round(lf.x), Math.round(lf.y));
+      }
+      ctx.globalAlpha = 1;
+      busy = true;
     }
 
     /* grass, in front of everything */
@@ -622,6 +726,7 @@ export function createLandscape() {
       GRASS_DAY.map((c, k) => lerp3(c, GRASS_NIGHT[k], e)),
     ];
     // rearmost layer first so the nearer blades overlap it
+    const gsz = mix(DAY_DOT, DOT, e);
     for (const layer of [0, 1, 2]) {
       const grass = grassCols[layer];
       for (let tone = 0; tone < 2; tone++) {
@@ -631,7 +736,7 @@ export function createLandscape() {
           const tip = Math.ceil(bl.h * 0.6);
           for (let k = tone ? tip : 0; k < (tone ? bl.h : tip); k++) {
             const f = k / Math.max(1, bl.h - 1);
-            dot(ctx, bl.x + Math.round(bend[i] * f ** 1.6), bl.base - k);
+            dotS(ctx, bl.x + Math.round(bend[i] * f ** 1.6), bl.base - k, gsz);
           }
         });
       }
@@ -641,20 +746,46 @@ export function createLandscape() {
     return busy;
   }
 
-  /** click: rustle that tree and send the birds hidden in it (and only it) flying */
+  /** click: rustle that tree (always) and send the birds hidden in it (if any are left) flying */
   function scare(i: number) {
     const tr = trees[i];
     if (!tr) return;
     tr.shake = 1;
+
+    // loose needles drift down from the crown
+    if (!reduced) {
+      const pool = tr.tones[1].length ? tr.tones[1] : tr.tones[2];
+      for (let n = 0; n < 10 && pool.length; n++) {
+        const j = Math.floor(Math.random() * (pool.length / 2)) * 2;
+        const max = 0.9 + Math.random() * 1.1;
+        leaves.push({
+          x: tr.cx + pool[j],
+          y: tr.by + pool[j + 1],
+          vx: (Math.random() - 0.5) * 8,
+          vy: Math.random() * 2,
+          life: max,
+          max,
+          tone: 1 + Math.floor(Math.random() * 2),
+        });
+      }
+    }
+
     for (const b of birds) {
       if (b.tree !== i || b.state !== "hidden" || b.scareAt) continue;
       if (reduced) {
         b.state = "gone"; // no flight animation: they just leave
-        b.returnAt = lastT + RETURN_AFTER;
       } else {
         b.scareAt = lastT + Math.random() * 0.15;
       }
     }
+  }
+
+  /** Click at cell (x, y). Only a click that lands on a tree shakes it; returns whether one did. */
+  function click(x: number, y: number) {
+    const i = treeAt(x, y);
+    if (i < 0) return false;
+    scare(i);
+    return true;
   }
 
   return {
@@ -663,6 +794,7 @@ export function createLandscape() {
     draw,
     treeAt,
     scare,
+    click,
     setReducedMotion(v: boolean) {
       reduced = v;
     },

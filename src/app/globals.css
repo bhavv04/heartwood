@@ -26,7 +26,7 @@
 }
 
 :root[data-theme="dark"] {
-  --bg: #090909;
+  --bg: #0a0a0a;
   --fg: #f2f2f2;
   --muted: #8c8c8c;
   --line: #1d1d1d;
