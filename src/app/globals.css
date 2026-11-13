@@ -3,33 +3,28 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --bg: #f8f8f8;
-  --fg: #1c1c1c;
-  --muted: #6e6e6e;
-  --line: #ececec;
-}
+  /* set every frame by the sky engine (from lib/scene/palette.ts) */
+  --sky-bg: #f7efe4;
+  --sky-line: #ecdfd0;
+  --sky-t: 0; /* text: 0 = day colour, 1 = night colour */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #f7efe4;
-    --fg: #2e2119;
-    --muted: #7d6757;
-    --line: #ecdfd0;
-  }
-}
+  --fg-day: #2e2119;
+  --fg-night: #f2f2f2;
+  --muted-day: #7d6757;
+  --muted-night: #8c8c8c;
 
-:root[data-theme="light"] {
-  --bg: #f7efe4;
-  --fg: #2e2119;
-  --muted: #7d6757;
-  --line: #ecdfd0;
-}
-
-:root[data-theme="dark"] {
-  --bg: #0a0a0a;
-  --fg: #f2f2f2;
-  --muted: #8c8c8c;
-  --line: #1d1d1d;
+  --bg: var(--sky-bg);
+  --line: var(--sky-line);
+  --fg: color-mix(
+    in srgb,
+    var(--fg-night) calc(var(--sky-t) * 100%),
+    var(--fg-day)
+  );
+  --muted: color-mix(
+    in srgb,
+    var(--muted-night) calc(var(--sky-t) * 100%),
+    var(--muted-day)
+  );
 }
 
 @theme inline {
@@ -43,9 +38,6 @@
 body {
   background: var(--bg);
   color: var(--fg);
-  transition:
-    background-color 0.4s ease,
-    color 0.4s ease;
 }
 
 .prose {

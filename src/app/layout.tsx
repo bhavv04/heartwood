@@ -4,8 +4,7 @@ import "./globals.css";
 import { site } from "@/content/site";
 import { CatProvider } from "@/context/CatContext";
 import Oneko from "@/components/Oneko";
-import SkyTheme from "@/components/SkyTheme";
-import FooterScene from "@/components/Footerscene";
+import Scene from "@/components/Scene";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,15 +30,13 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}`,
+            __html: `try{var t=localStorage.getItem('theme')||'dark',n=t==='dark',d=document.documentElement,s=d.style;d.dataset.theme=t;s.setProperty('--sky-bg',n?'#0a0a0a':'#f7efe4');s.setProperty('--sky-line',n?'#1d1d1d':'#ecdfd0');s.setProperty('--sky-t',n?'1':'0')}catch(e){document.documentElement.dataset.theme='dark'}`,
           }}
         />
       </head>
       <body className="font-sans antialiased">
         <CatProvider>
-          <SkyTheme />
-          <main className="mx-auto max-w-2xl px-6 pb-12">{children}</main>
-          <FooterScene />
+          <Scene>{children}</Scene>
           <Oneko />
         </CatProvider>
       </body>

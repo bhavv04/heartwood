@@ -1,14 +1,17 @@
+// components/skyCanvas.ts
 /* Dithered pixel-art sky. Pure canvas drawing, no React. */
+
+import { sample } from "@/lib/scene/palette";
 
 export const P = 3; // cell pitch (css px)
 export const DOT = 2; // dither dot size (css px)
-export const ROWS = 130; // sky height in cells (= 440px)
+export const ROWS = 130; // sky height in cells (= 390px)
 
 const MOON_R = 20;
 const SUN_R = 20;
 const HALO = 25; // halo thickness in cells
 const CY = Math.round(ROWS * 0.4); // resting centre row of sun / moon (middle of the sky)
-const HORIZON = Math.round(ROWS * 0.9); // row of the horizon the bodies rise / set on
+const ARC_Y = Math.round(ROWS * 0.8); // row where the arc meets the screen edges (higher = shallower dip)
 const SWEEP = 100; // degrees travelled along the arc during a swap
 
 type Ctx = {
@@ -16,6 +19,12 @@ type Ctx = {
   globalAlpha: number;
   fillRect(x: number, y: number, w: number, h: number): void;
   clearRect(x: number, y: number, w: number, h: number): void;
+  createLinearGradient(
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+  ): CanvasGradient;
 };
 
 /* ------------------------------ helpers ---------------------------- */
@@ -223,6 +232,24 @@ const RAINY_DAY = rgb("#6c788a"),
 const DROP_DAY = rgb("#4a82b3"),
   DROP_NIGHT = rgb("#8c97ad");
 const RAIN_LEN = 36; // rows a drop falls (scaled up with the bigger clouds)
+
+/* ------------------------------ sky wash --------------------------- */
+// Sunset / sunrise colours, sampled from the shared palette. The gradient ends
+// on the page's own background colour, so it melts into the page with no seam.
+const rgba = (c: number[], a: number) =>
+  `rgba(${c.map((v) => Math.round(v)).join(",")},${a})`;
+
+function skyWash(ctx: Ctx, w: number, h: number, e: number) {
+  const a = Math.sin(Math.PI * e) ** 0.6 * 0.95; // 0 at rest, peaks mid-swap
+  if (a < 0.01) return;
+  const s = sample(e);
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, rgba(s.top, a));
+  g.addColorStop(0.7, rgba(s.bot, a));
+  g.addColorStop(1, rgba(s.bg, a)); // = the page colour right below the canvas
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+}
 
 /* ------------------------------ bodies ----------------------------- */
 type HaloCells = {
@@ -541,9 +568,11 @@ export function createSky() {
   let bodyGlow = 0; // 0 = resting (dim halo) .. 1 = hovering sun / moon
   let meteors: Meteor[] = [];
   let nextMeteor = 2; // time (s) of the next shooting star
-  let toDay = false; // direction of the current swap (see the arc code in draw)
 
-  /** e: 0 = day .. 1 = night (eased). t, dt in seconds. Returns the clickable sun/moon disc. */
+  /**
+   * e: 0 = day .. 1 = night (eased). toDay: true during the night -> day half
+   * of the orbit. t, dt in seconds. Returns the clickable sun/moon disc.
+   */
   function draw(
     ctx: Ctx,
     cols: number,
@@ -551,11 +580,13 @@ export function createSky() {
     t: number,
     dt: number,
     ptr: Pointer,
+    toDay: boolean,
   ) {
     dt = Math.min(dt, 0.1);
     lastT = t;
     ctx.clearRect(0, 0, cols * P, ROWS * P);
     ctx.globalAlpha = 1;
+    skyWash(ctx, cols * P, ROWS * P, e); // sunset / sunrise colours mid-swap
     const tick = Math.floor(t * 2);
 
     // stars
@@ -604,26 +635,27 @@ export function createSky() {
     meteors = meteors.filter((m) => m.age < m.life);
     ctx.globalAlpha = 1;
 
-    // sun and moon travel along an elliptical arc: the sun sets over the right
-    // horizon while the moon rises from the left and climbs to the top.
-    // (Computed before the clouds so nearby clouds can catch the sunlight.)
+    // sun and moon travel along a wide elliptical arc and slide off the left /
+    // right edges of the screen. (Computed before the clouds so nearby clouds
+    // can catch the sunlight.)
     const cx = Math.round(cols / 2);
-    const A = Math.min(cols * 0.42, 170); // horizontal radius of the orbit
-    const B = HORIZON - CY; // vertical radius of the orbit
+    // Wide enough that the bodies slide off the left / right edges of the screen
+    // (the +SUN_R+4 puts the arc's ends just past the edge) instead of dipping to a horizon.
+    const A = cols * 0.5 + SUN_R + 4;
+    const B = ARC_Y - CY; // vertical radius: how high the arc rises above its ends
     const at = (deg: number) => {
       const a = (deg * Math.PI) / 180;
       return {
         x: Math.round(cx + A * Math.cos(a)),
-        y: Math.round(HORIZON - B * Math.sin(a)),
+        y: Math.round(ARC_Y - B * Math.sin(a)),
       };
     };
     // Both swaps turn clockwise. Going to night: the sun sets on the right while
     // the moon rises from the left. Going back to day the moon carries on over
     // the top and sets on the right while the sun rises from the left. The
-    // direction is fixed at each rest state (e ~ 0 or 1); the jump to the
-    // waiting position happens while that body is invisible.
-    if (e < 0.005) toDay = false;
-    else if (e > 0.995) toDay = true;
+    // engine supplies `toDay` from a monotonic orbit counter, so the direction
+    // is always right, even if you click mid-swap. The jump to the waiting
+    // position happens while that body is invisible.
     const sunP = at(toDay ? 90 + e * SWEEP : 90 - e * SWEEP);
     const moonP = at(toDay ? 90 - (1 - e) * SWEEP : 90 + (1 - e) * SWEEP);
     // sunLow: the sun reddens as it sets. twilight: peaks mid-swap (both bodies
@@ -735,7 +767,7 @@ export function createSky() {
     }
     ctx.globalAlpha = 1;
 
-    return { cx, cy: CY, r: e < 0.5 ? SUN_R : MOON_R };
+    return { cx: main.x, cy: main.y, r: mainR };
   }
 
   /** index of the cloud under cell (x, y), or -1 */

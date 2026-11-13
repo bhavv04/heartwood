@@ -147,29 +147,31 @@ const TERRAIN_DAY = [
   "#b4c6de", // snow shade
 ].map(rgb);
 const BG_DAY = rgb("#f7efe4"); // light page colour (see globals.css)
+// Night: a moonlit blue-teal palette at about the same brightness as the old
+// greys, so it stays dim but isn't colourless.
 const TERRAIN_NIGHT = [
-  "#404040",
-  "#2c2c2c",
-  "#585858",
-  "#3a3a3a",
-  "#727272",
-  "#505050",
-  "#8c8c8c",
-  "#5c5c5c",
-  "#4a4a4a",
-  "#8c8c8c",
-  "#d0d0d0",
-  "#9a9a9a",
+  "#3c4a6e", // far lit
+  "#283350", // far shade
+  "#51628a", // mid lit
+  "#34425f", // mid shade
+  "#3f6b6e", // foothills lit (teal)
+  "#2a4a50", // foothills shade
+  "#7f93bf", // ridge line
+  "#3d5a45", // ground (dark green)
+  "#3a4766", // mist
+  "#857b72", // path (dim warm sand)
+  "#cfd9f2", // snow lit (cool white)
+  "#8e9cc4", // snow shade
 ].map(rgb);
 
 /* ------------------------------ trees ------------------------------ */
 // [highlight, light, body, shadow]
 // day: pine greens, dark enough to stand out against the cream page
 const TREE_DAY = ["#52a57a", "#2f8260", "#1c5d4a", "#0e3a32"].map(rgb);
-const TREE_NIGHT = ["#6e6e6e", "#545454", "#3a3a3a", "#222222"].map(rgb);
+const TREE_NIGHT = ["#5c8f8a", "#3f6a68", "#2a4a4c", "#16292f"].map(rgb);
 // far trees fade toward this, which gives the forest some depth
 const FOG_DAY = rgb("#a9cbbf"); // hazy blue-green for the far trees
-const FOG_NIGHT = rgb("#4a4a4a");
+const FOG_NIGHT = rgb("#3a4766"); // matches the night mist
 // share of dots kept per tone: highlights are the sparsest, so the foliage
 // reads as a stipple of dots rather than a solid mass
 const TREE_DENS = [0.6, 0.78, 0.92, 1];
@@ -282,7 +284,7 @@ const BIRD_FRAMES = [
 const BIRD_W = 7;
 const BIRD_H = 4;
 const BIRD_DAY = rgb("#1c1c1c");
-const BIRD_NIGHT = rgb("#c8c8c8");
+const BIRD_NIGHT = rgb("#c8d2ea");
 
 // hidden: inside a tree, not drawn. flee: flying away. gone: left the scene for
 // good (a tree gives up its birds once, the first time it is shaken).
@@ -344,13 +346,13 @@ type Blade = {
 };
 const GRASS_BASE = ROWS - 1; // bottom row
 const GRASS_DAY = ["#4d7d1f", "#a6d443"].map(rgb); // [stem, tip]
-const GRASS_NIGHT = ["#626262", "#8e8e8e"].map(rgb);
+const GRASS_NIGHT = ["#456049", "#79a083"].map(rgb);
 // middle layer: lighter / hazier than the front, so it sits further away
 const GRASS_BACK_DAY = ["#6c9a35", "#bddc5e"].map(rgb);
-const GRASS_BACK_NIGHT = ["#484848", "#6c6c6c"].map(rgb);
+const GRASS_BACK_NIGHT = ["#34503c", "#587a62"].map(rgb);
 // rearmost layer: the haziest of all
 const GRASS_MID_DAY = ["#8db055", "#d4e78e"].map(rgb);
-const GRASS_MID_NIGHT = ["#3a3a3a", "#5a5a5a"].map(rgb);
+const GRASS_MID_NIGHT = ["#2a3f35", "#456352"].map(rgb);
 
 /* ------------------------------ scene ------------------------------ */
 export type Pointer = { x: number; y: number } | null; // in cells
