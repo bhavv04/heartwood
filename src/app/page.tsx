@@ -32,21 +32,7 @@ export default function Home() {
 
       <div className="my-4 space-y-4">
         <p>{site.bio}</p>
-        <p className="">
-          When I&apos;m not working, I&apos;m usually reading fantasy or the
-          classics (currently reading{" "}
-          <a
-            href="https://www.goodreads.com/book/show/35052265"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-fg underline decoration-muted/70 underline-offset-4 transition-colors hover:decoration-fg"
-          >
-            Bloody Rose by Nicholas Eames
-          </a>
-          ), out trekking or cycling, lifting, or building something in the
-          woodshop. I&apos;m always learning something new, and I&apos;m
-          naturally curious about the nature and the cosmos.
-        </p>
+        <p>{site.interests}</p>
       </div>
 
       <div className="my-4">
