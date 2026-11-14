@@ -8,10 +8,10 @@ const hex = (h: string): RGB =>
 // e = 0 day .. 1 night. Intermediate stops keep the blend vivid (no orange->navy mud).
 const KEYS = [
   { e: 0, top: "#6fa8e0", bot: "#bfe0f5", bg: "#f7efe4", line: "#ecdfd0" }, // day
-  { e: 0.25, top: "#f0b27a", bot: "#ffe0a8", bg: "#f6dcb8", line: "#ead0a8" }, // warm
-  { e: 0.5, top: "#e8803a", bot: "#ffc069", bg: "#f0b068", line: "#dd9a50" }, // peak sunset
-  { e: 0.75, top: "#c4553a", bot: "#f08050", bg: "#c4604a", line: "#a84d3b" }, // coral dusk (lighter, no brown)
-  { e: 0.9, top: "#1a1b2c", bot: "#2a2438", bg: "#1a1b2c", line: "#262634" }, // charcoal-blue, skips the brown range
+  { e: 0.25, top: "#8fa6d9", bot: "#f6cfa2", bg: "#f3e1cf", line: "#e6d1ba" }, // golden hour: periwinkle into peach
+  { e: 0.5, top: "#7a6bb3", bot: "#f2a081", bg: "#e6bca6", line: "#d3a28d" }, // sunset: violet into salmon
+  { e: 0.75, top: "#3f3b80", bot: "#d9728c", bg: "#9c6485", line: "#855270" }, // dusk: indigo into rose
+  { e: 0.9, top: "#1b1a3c", bot: "#4b305f", bg: "#1d1a2f", line: "#2a2641" }, // twilight: deep indigo into plum
   { e: 1, top: "#070b1f", bot: "#1b2347", bg: "#0a0a0a", line: "#1d1d1d" }, // night
 ].map((k) => ({
   e: k.e,

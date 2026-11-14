@@ -70,7 +70,7 @@ export default function EntryList({ entries }: { entries: WorkEntry[] }) {
             type="button"
             aria-label={label}
             onClick={() => scroll(dir as 1 | -1)}
-            className="grid h-8 w-8 place-items-center rounded-sm bg-line text-muted transition-colors hover:text-fg"
+            className="grid h-8 w-8 place-items-center rounded-sm bg-line cursor-pointer text-muted transition-colors hover:bg-fg hover:text-line"
           >
             <Icon size={16} />
           </button>
