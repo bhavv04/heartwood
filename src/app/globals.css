@@ -13,7 +13,7 @@
   --muted-day: #7d6757;
   --muted-night: #8c8c8c;
 
-  --bg: var(--sky-bg);
+  --bg: #0f0f0f;
   --line: var(--sky-line);
   --fg: color-mix(
     in srgb,

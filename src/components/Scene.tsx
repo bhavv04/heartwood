@@ -9,8 +9,7 @@ export default function Scene({ children }: { children: React.ReactNode }) {
   const [sky] = useState(skyLayer);
   return (
     <SceneProvider>
-      <SceneCanvas layer={sky} className="pointer-events-none block w-full" />
-      <main className="mx-auto max-w-2xl px-6 pb-12">{children}</main>
+      <main className="mx-auto max-w-2xl px-6 py-24">{children}</main>
       <FooterScene />
     </SceneProvider>
   );
