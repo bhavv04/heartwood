@@ -32,6 +32,7 @@ export default function Home() {
 
       <div className="my-4 space-y-4">
         <p>{site.bio}</p>
+        <p>{site.interests}</p>
       </div>
 
       <div className="my-4">
