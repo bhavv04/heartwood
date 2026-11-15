@@ -1,7 +1,7 @@
 /* Dithered pixel-art footer scene: layered mountains, mist, a dense pine forest
    and grass. Birds hide inside the trees until you click one, then they burst
    out of the foliage and fly off.
-   Pure canvas drawing, no React. Uses the same cell / dot grid as the sky. */
+   Pure canvas drawing, no React. Night palette only. */
 
 export const P = 4; // cell pitch (css px)
 export const DOT = 2; // dither dot size (css px)
@@ -25,15 +25,6 @@ const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const OFF = (P - DOT) / 2;
 const dot = (ctx: Ctx, x: number, y: number) =>
   ctx.fillRect(x * P + OFF, y * P + OFF, DOT, DOT);
-
-// a dot of any size, centred in its cell. By day the scene is drawn with
-// bigger dots so it reads as solid pixel art on a light page instead of a
-// see-through mesh; at night it shrinks back to the fine dither.
-const dotS = (ctx: Ctx, x: number, y: number, size: number) =>
-  ctx.fillRect(x * P + (P - size) / 2, y * P + (P - size) / 2, size, size);
-// dot size by day (DOT = fine 2px dither like night; raise to 3 or P for chunkier, more solid pixels)
-const DAY_DOT = DOT;
-const mix = (day: number, night: number, e: number) => day + (night - day) * e;
 
 const rgb = (h: string) =>
   [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -132,24 +123,9 @@ function buildRidge(cols: number, L: Layer) {
 //                  snow lit, snow shade]
 // Kept dim on purpose: nothing in the scene goes anywhere near white, apart
 // from the snow caps, which are the lightest thing on the mountains.
-const TERRAIN_DAY = [
-  "#a9b9d0", // far lit
-  "#8497b4", // far shade
-  "#869cbb", // mid lit
-  "#5d7396", // mid shade
-  "#5f8f84", // foothills lit
-  "#3d6a63", // foothills shade
-  "#2a3d57", // ridge line
-  "#6f8a43", // ground
-  "#c6d3df", // mist
-  "#d2b183", // path
-  "#e6eef8", // snow lit
-  "#b4c6de", // snow shade
-].map(rgb);
-const BG_DAY = rgb("#f7efe4"); // light page colour (see globals.css)
 // Night: a moonlit blue-teal palette at about the same brightness as the old
 // greys, so it stays dim but isn't colourless.
-const TERRAIN_NIGHT = [
+const TERRAIN = [
   "#3c4a6e", // far lit
   "#283350", // far shade
   "#51628a", // mid lit
@@ -166,16 +142,12 @@ const TERRAIN_NIGHT = [
 
 /* ------------------------------ trees ------------------------------ */
 // [highlight, light, body, shadow]
-// day: pine greens, dark enough to stand out against the cream page
-const TREE_DAY = ["#52a57a", "#2f8260", "#1c5d4a", "#0e3a32"].map(rgb);
-const TREE_NIGHT = ["#5c8f8a", "#3f6a68", "#2a4a4c", "#16292f"].map(rgb);
+const TREE = ["#5c8f8a", "#3f6a68", "#2a4a4c", "#16292f"].map(rgb);
 // far trees fade toward this, which gives the forest some depth
-const FOG_DAY = rgb("#a9cbbf"); // hazy blue-green for the far trees
-const FOG_NIGHT = rgb("#3a4766"); // matches the night mist
+const FOG = rgb("#3a4766"); // matches the night mist
 // share of dots kept per tone: highlights are the sparsest, so the foliage
 // reads as a stipple of dots rather than a solid mass
 const TREE_DENS = [0.6, 0.78, 0.92, 1];
-const TREE_DENS_DAY = TREE_DENS; // same sparse stipple by day and night
 
 type Nest = { dx: number; dy: number }; // a spot inside the foliage, relative to (cx, by)
 type Tree = {
@@ -283,8 +255,7 @@ const BIRD_FRAMES = [
 ];
 const BIRD_W = 7;
 const BIRD_H = 4;
-const BIRD_DAY = rgb("#1c1c1c");
-const BIRD_NIGHT = rgb("#c8d2ea");
+const BIRD = rgb("#c8d2ea");
 
 // hidden: inside a tree, not drawn. flee: flying away. gone: left the scene for
 // good (a tree gives up its birds once, the first time it is shaken).
@@ -345,21 +316,16 @@ type Blade = {
   layer: 0 | 1 | 2; // 0 = rearmost (hazy), 1 = middle, 2 = front
 };
 const GRASS_BASE = ROWS - 1; // bottom row
-const GRASS_DAY = ["#4d7d1f", "#a6d443"].map(rgb); // [stem, tip]
-const GRASS_NIGHT = ["#456049", "#79a083"].map(rgb);
-// middle layer: lighter / hazier than the front, so it sits further away
-const GRASS_BACK_DAY = ["#6c9a35", "#bddc5e"].map(rgb);
-const GRASS_BACK_NIGHT = ["#34503c", "#587a62"].map(rgb);
+const GRASS = ["#456049", "#79a083"].map(rgb);
+const GRASS_BACK = ["#34503c", "#587a62"].map(rgb);
 // rearmost layer: the haziest of all
-const GRASS_MID_DAY = ["#8db055", "#d4e78e"].map(rgb);
-const GRASS_MID_NIGHT = ["#2a3f35", "#456352"].map(rgb);
+const GRASS_MID = ["#2a3f35", "#456352"].map(rgb);
 
 /* ------------------------------ scene ------------------------------ */
 export type Pointer = { x: number; y: number } | null; // in cells
 
 export function createLandscape() {
   let buckets: number[][] = [];
-  let holes: number[][] = []; // cells the dither left out; filled softly by day
   let trees: Tree[] = [];
   let blades: Blade[] = [];
   let birds: Bird[] = [];
@@ -371,7 +337,6 @@ export function createLandscape() {
   function layout(cols: number) {
     /* mountains */
     buckets = Array.from({ length: 12 }, () => []);
-    holes = Array.from({ length: 12 }, () => []);
     const ridges = LAYERS.map((L) => buildRidge(cols, L));
     // An empty dirt path: it climbs from the bottom edge towards the horizon,
     // narrowing and winding a little. No trees or grass grow on it.
@@ -401,12 +366,10 @@ export function createLandscape() {
             const pd =
               0.93 * soft * (0.85 + 0.3 * vnoise((x + y * 0.6) * 0.3, 83));
             if (bay(x, y) < pd) buckets[9].push(x, y);
-            else holes[9].push(x, y);
             continue;
           }
           const d = GROUND_DENS * (0.8 + 0.4 * vnoise((x * 0.5 + y) * 0.2, 41));
           if (bay(x, y) < d) buckets[7].push(x, y);
-          else holes[7].push(x, y);
           continue;
         }
         // frontmost range that covers this cell
@@ -452,7 +415,6 @@ export function createLandscape() {
             L.base - L.rise * L.snow + (vnoise(x * 0.3, L.seed + 70) - 0.5) * 5;
           if (y < line && !(gully && y - rr > 3)) {
             if (bay(x, y) < 0.95) buckets[slope > 0 ? 10 : 11].push(x, y);
-            else holes[slope > 0 ? 10 : 11].push(x, y);
             continue;
           }
         }
@@ -462,7 +424,6 @@ export function createLandscape() {
           (lit ? 1 : 0.92) *
           (0.85 + 0.3 * vnoise((x + y * 0.7) * 0.12, 5 + layer));
         if (bay(x, y) < d) buckets[layer * 2 + (lit ? 0 : 1)].push(x, y);
-        else holes[layer * 2 + (lit ? 0 : 1)].push(x, y);
       }
     }
 
@@ -570,22 +531,11 @@ export function createLandscape() {
   }
 
   /** Mountains + ground. Static, so the caller can draw it once into an offscreen canvas. */
-  function drawTerrain(ctx: Ctx, e: number) {
-    // by day, the cells the dither skipped get a pale wash of the same colour,
-    // so the rock and ground read as solid with a stipple texture, not a mesh
-    if (DAY_DOT > DOT && e < 0.98) {
-      ctx.globalAlpha = 1 - e;
-      holes.forEach((pts, i) => {
-        ctx.fillStyle = css(lerp3(TERRAIN_DAY[i], BG_DAY, 0.55));
-        for (let j = 0; j < pts.length; j += 2)
-          ctx.fillRect(pts[j] * P, pts[j + 1] * P, P, P);
-      });
-    }
+  function drawTerrain(ctx: Ctx) {
     ctx.globalAlpha = 1;
     buckets.forEach((pts, i) => {
-      ctx.fillStyle = css(lerp3(TERRAIN_DAY[i], TERRAIN_NIGHT[i], e));
-      const sz = mix(DAY_DOT, DOT, e);
-      for (let j = 0; j < pts.length; j += 2) dotS(ctx, pts[j], pts[j + 1], sz);
+      ctx.fillStyle = css(TERRAIN[i]);
+      for (let j = 0; j < pts.length; j += 2) dot(ctx, pts[j], pts[j + 1]);
     });
   }
 
@@ -615,7 +565,6 @@ export function createLandscape() {
   function draw(
     ctx: Ctx,
     cols: number,
-    e: number,
     t: number,
     dt: number,
     ptr: Pointer,
@@ -626,8 +575,8 @@ export function createLandscape() {
 
     /* trees: only the front-most tree under the pointer lights up */
     const hover = ptr ? treeAt(ptr.x, ptr.y) : -1;
-    const base = TREE_DAY.map((c, k) => lerp3(c, TREE_NIGHT[k], e));
-    const fog = lerp3(FOG_DAY, FOG_NIGHT, e);
+    const base = TREE;
+    const fog = FOG;
     trees.forEach((tr, ti) => {
       const hovered = ti === hover;
       tr.glow += ((hovered ? 1 : 0) - tr.glow) * (1 - Math.exp(-dt * 8));
@@ -637,15 +586,13 @@ export function createLandscape() {
       tr.tones.forEach((pts, k) => {
         const c = lerp3(base[k], fog, tr.fog * 0.4);
         ctx.fillStyle = css(lerp3(c, [200, 200, 200], tr.glow * 0.12));
-        const keep = mix(TREE_DENS_DAY[k], TREE_DENS[k], e);
-        const tsz = mix(DAY_DOT, DOT, e);
+        const keep = TREE_DENS[k];
         for (let j = 0; j < pts.length; j += 2) {
           if (bay(pts[j] + 1, pts[j + 1]) >= keep) continue;
-          dotS(
+          dot(
             ctx,
             tr.cx + pts[j] + sway(tr, pts[j + 1], t),
             tr.by + pts[j + 1],
-            tsz,
           );
         }
       });
@@ -653,7 +600,7 @@ export function createLandscape() {
 
     /* birds: invisible inside their tree until it is clicked, then they burst
        out of the foliage, fly off, and (much later) slip back in */
-    ctx.fillStyle = css(lerp3(BIRD_DAY, BIRD_NIGHT, e));
+    ctx.fillStyle = css(BIRD);
     for (const b of birds) {
       if (b.state === "hidden") {
         if (!b.scareAt || t < b.scareAt) {
@@ -722,13 +669,8 @@ export function createLandscape() {
       bl.push += (target - bl.push) * (1 - Math.exp(-dt * 10));
       bend[i] = bl.lean * 1.2 + wind * (0.7 + bl.h * 0.1) + bl.push;
     });
-    const grassCols = [
-      GRASS_MID_DAY.map((c, k) => lerp3(c, GRASS_MID_NIGHT[k], e)),
-      GRASS_BACK_DAY.map((c, k) => lerp3(c, GRASS_BACK_NIGHT[k], e)),
-      GRASS_DAY.map((c, k) => lerp3(c, GRASS_NIGHT[k], e)),
-    ];
+    const grassCols = [GRASS_MID, GRASS_BACK, GRASS];
     // rearmost layer first so the nearer blades overlap it
-    const gsz = mix(DAY_DOT, DOT, e);
     for (const layer of [0, 1, 2]) {
       const grass = grassCols[layer];
       for (let tone = 0; tone < 2; tone++) {
@@ -738,7 +680,7 @@ export function createLandscape() {
           const tip = Math.ceil(bl.h * 0.6);
           for (let k = tone ? tip : 0; k < (tone ? bl.h : tip); k++) {
             const f = k / Math.max(1, bl.h - 1);
-            dotS(ctx, bl.x + Math.round(bend[i] * f ** 1.6), bl.base - k, gsz);
+            dot(ctx, bl.x + Math.round(bend[i] * f ** 1.6), bl.base - k);
           }
         });
       }

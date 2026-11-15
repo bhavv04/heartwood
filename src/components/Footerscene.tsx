@@ -1,22 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { createLandscape, P, ROWS, type Pointer } from "./landscape";
+import { createLandscape, P, ROWS, type Pointer } from "@/components/landscape";
 
-type Props = {
-  /** Force the theme. Leave undefined to follow the `dark` class / `data-theme` on <html>. */
-  night?: boolean;
-};
-
-const prefersDark = () =>
-  document.documentElement.classList.contains("dark") ||
-  document.documentElement.dataset.theme === "dark";
-
-export default function FooterScene({ night }: Props) {
+export default function FooterScene() {
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const syncTheme = useRef<(() => void) | null>(null);
-  const nightRef = useRef(night);
 
   useEffect(() => {
     const box = boxRef.current!;
@@ -31,9 +20,6 @@ export default function FooterScene({ night }: Props) {
     let cols = 0;
     let dpr = 1;
     let ptr: Pointer = null;
-    let target = (nightRef.current ?? prefersDark()) ? 1 : 0;
-    let e = target; // 0 = day .. 1 = night, eased
-    let terrainE = -1;
     let raf = 0;
     let last = 0;
     let visible = true;
@@ -41,8 +27,7 @@ export default function FooterScene({ night }: Props) {
     const paintTerrain = () => {
       tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       tctx.clearRect(0, 0, cols * P, ROWS * P);
-      land.drawTerrain(tctx, e);
-      terrainE = e;
+      land.drawTerrain(tctx);
     };
 
     const frame = (now: number) => {
@@ -51,17 +36,13 @@ export default function FooterScene({ night }: Props) {
       const dt = Math.min(0.05, last ? t - last : 0.016);
       last = t;
 
-      e += (target - e) * (1 - Math.exp(-dt * 5));
-      if (Math.abs(target - e) < 0.002) e = target;
-      if (e !== terrainE) paintTerrain();
-
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, cols * P, ROWS * P);
       ctx.drawImage(terrain, 0, 0, cols * P, ROWS * P);
-      const busy = land.draw(ctx, cols, e, t, dt, ptr);
+      const busy = land.draw(ctx, cols, t, dt, ptr);
 
       // keep the loop alive only while something is moving
-      if ((busy || e !== target) && visible) raf = requestAnimationFrame(frame);
+      if (busy && visible) raf = requestAnimationFrame(frame);
     };
 
     const wake = () => {
@@ -113,11 +94,6 @@ export default function FooterScene({ night }: Props) {
       wake();
     };
 
-    syncTheme.current = () => {
-      target = (nightRef.current ?? prefersDark()) ? 1 : 0;
-      wake();
-    };
-
     const resizeObs = new ResizeObserver(resize);
     resizeObs.observe(box);
     const visibleObs = new IntersectionObserver(([entry]) => {
@@ -125,11 +101,6 @@ export default function FooterScene({ night }: Props) {
       if (visible) wake();
     });
     visibleObs.observe(box);
-    const themeObs = new MutationObserver(() => syncTheme.current?.());
-    themeObs.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class", "data-theme"],
-    });
     const onMotion = () => land.setReducedMotion(motion.matches);
     motion.addEventListener("change", onMotion);
 
@@ -142,19 +113,12 @@ export default function FooterScene({ night }: Props) {
       cancelAnimationFrame(raf);
       resizeObs.disconnect();
       visibleObs.disconnect();
-      themeObs.disconnect();
       motion.removeEventListener("change", onMotion);
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerleave", onLeave);
       canvas.removeEventListener("click", onClick);
     };
   }, []);
-
-  // follow the `night` prop if it changes
-  useEffect(() => {
-    nightRef.current = night;
-    syncTheme.current?.();
-  }, [night]);
 
   return (
     <div ref={boxRef} className="w-full select-none overflow-hidden">
