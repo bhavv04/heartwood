@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { IconType } from "react-icons";
 import {
   SiGo,
@@ -70,6 +71,7 @@ type Project = {
   a: Anchor;
 };
 
+// order = order they appear in the animation
 const PROJECTS: Project[] = [
   {
     name: "creduce",
@@ -198,6 +200,15 @@ const PROJECTS: Project[] = [
 const RESEARCH_CHAIN = ["Deadzones", "GAIA"];
 // --------------------------------------------------------------------------
 
+const START = 1.0; // when the first project begins
+const STEP = 0.22; // seconds between projects
+
+const s = (d: number, t?: number): CSSProperties =>
+  ({
+    "--d": `${d.toFixed(2)}s`,
+    ...(t ? { "--t": `${t}s` } : {}),
+  }) as CSSProperties;
+
 // deterministic PRNG so server and client render the same stars
 function mulberry32(a: number) {
   return () => {
@@ -209,11 +220,21 @@ function mulberry32(a: number) {
   };
 }
 
+const rnd = mulberry32(7);
+const STARS = Array.from({ length: 38 }, () => ({
+  x: Math.round(rnd() * W * 10) / 10,
+  y: Math.round(rnd() * H * 10) / 10,
+  r: 0.6 + rnd() * 0.8,
+  d: rnd() * 1.2,
+}));
+
 const byName = Object.fromEntries(PROJECTS.map((p) => [p.name, p]));
 const chain = RESEARCH_CHAIN.map((n) => byName[n]);
 const chainPath = chain
   .map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`)
   .join(" ");
+const LAST = START + (PROJECTS.length - 1) * STEP;
+const CHAIN_AT = LAST + 0.8;
 
 export default function ConstellationDiagram() {
   return (
@@ -230,11 +251,14 @@ export default function ConstellationDiagram() {
         strokeWidth={1}
         strokeOpacity={0.6}
       >
-        {PROJECTS.flatMap((p) =>
+        {PROJECTS.flatMap((p, i) =>
           p.langs.map((l) => (
             <path
               key={`${p.name}-${l}`}
               d={`M${LANGS[l].x} ${LANGS[l].y} L${p.x} ${p.y}`}
+              pathLength={1}
+              className="hw-draw"
+              style={s(START + i * STEP, 0.5)}
             />
           )),
         )}
@@ -244,20 +268,21 @@ export default function ConstellationDiagram() {
       <path
         d={chainPath}
         fill="none"
-        className="stroke-fg"
+        className="hw-fade stroke-fg"
         strokeWidth={1}
         strokeOpacity={0.55}
         strokeDasharray="2 4"
+        style={s(CHAIN_AT)}
       />
 
       {/* language hubs */}
-      {(Object.keys(LANGS) as Lang[]).map((l) => {
+      {(Object.keys(LANGS) as Lang[]).map((l, i) => {
         const { x, y, side } = LANGS[l];
         const Icon = ICONS[l];
         const lab = hubLabel(x, y, side);
         return (
           <g key={l}>
-            <g>
+            <g className="hw-pop" style={s(0.4 + i * 0.1)}>
               <circle
                 cx={x}
                 cy={y}
@@ -273,10 +298,11 @@ export default function ConstellationDiagram() {
               dy={lab.dy}
               textAnchor={lab.anchor}
               fontSize={12}
-              className="fill-muted stroke-bg"
+              className="fill-muted stroke-bg hw-fade"
               strokeWidth={3}
               paintOrder="stroke"
               strokeLinejoin="round"
+              style={s(0.6 + i * 0.1)}
             >
               {l}
             </text>
@@ -285,19 +311,27 @@ export default function ConstellationDiagram() {
       })}
 
       {/* projects */}
-      {PROJECTS.map((p) => {
+      {PROJECTS.map((p, i) => {
+        const t0 = START + i * STEP;
         return (
           <g key={p.name}>
-            <circle cx={p.x} cy={p.y} r={4.5} className="fill-fg" />
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={4.5}
+              className="hw-pop fill-fg"
+              style={s(t0 + 0.4)}
+            />
             {p.research && (
               <circle
                 cx={p.x}
                 cy={p.y}
                 r={9}
                 fill="none"
-                className="stroke-fg"
+                className="hw-pop stroke-fg"
                 strokeWidth={1}
                 strokeOpacity={0.55}
+                style={s(CHAIN_AT + 0.4)}
               />
             )}
             <text
@@ -305,7 +339,8 @@ export default function ConstellationDiagram() {
               y={p.ly}
               textAnchor={p.a}
               fontSize={12}
-              className="fill-fg"
+              className="fill-fg hw-fade"
+              style={s(t0 + 0.5)}
             >
               {p.name}
             </text>
