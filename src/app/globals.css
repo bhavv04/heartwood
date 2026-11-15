@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: dark;
-  --bg: #2a2a76;
+  --bg: #111111;
   --fg: #e8e8ea;
   --muted: #8a8a92;
   --line: #26262b;
@@ -126,4 +126,51 @@ html {
   scrollbar-width: thin;
   scrollbar-color: var(--muted) var(--bg); /* thumb, track */
   scrollbar-gutter: stable;
+}
+
+/* starry night */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* fade out toward the bottom so they don't fight the footer landscape */
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 95%);
+}
+body::before {
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+    radial-gradient(1px 1px at 90px 140px, #dfe6ff, transparent),
+    radial-gradient(1px 1px at 160px 60px, #fff, transparent),
+    radial-gradient(1px 1px at 230px 190px, #dfe6ff, transparent),
+    radial-gradient(1px 1px at 310px 100px, #fff, transparent),
+    radial-gradient(1px 1px at 60px 250px, #fff, transparent),
+    radial-gradient(1px 1px at 280px 280px, #dfe6ff, transparent);
+  background-size: 340px 320px;
+  opacity: 0.55;
+}
+body::after {
+  background-image:
+    radial-gradient(1.5px 1.5px at 70px 80px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 250px 40px, #ffeccc, transparent),
+    radial-gradient(1.5px 1.5px at 400px 220px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 150px 330px, #dfe6ff, transparent);
+  background-size: 460px 400px;
+  animation: star-twinkle 6s ease-in-out infinite alternate;
+}
+@keyframes star-twinkle {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    animation: none;
+    opacity: 0.6;
+  }
 }
