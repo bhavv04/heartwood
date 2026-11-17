@@ -7,7 +7,7 @@ export const P = 4; // cell pitch (css px)
 export const DOT = 2; // dither dot size (css px)
 export const ROWS = 60; // scene height in cells (= 240px)
 
-const GROUND = 51; // first row of the ground band
+const GROUND = 50; // first row of the ground band
 
 type Ctx = {
   fillStyle: string | CanvasGradient | CanvasPattern;
